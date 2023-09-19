@@ -1,21 +1,49 @@
+'use client';
+
+import { usePathname } from 'next/navigation';
+import { clsx } from 'clsx';
+
+type LinkProps = {
+  href: string;
+  label: string;
+}
+
+const links: LinkProps[] = [
+  {
+    href: '/',
+    label: 'Home'
+  },
+  {
+    href: '/login',
+    label: 'Sign in'
+  },
+  {
+    href: '/register',
+    label: 'Sign up'
+  },
+]
+
 export default function Navbar() {
   const isAuthenticated = false;
+  const pathname = usePathname();
 
   const unauthenticatedUserNavbar = (
     <nav className="navbar navbar-light">
       <div className="container">
         <a className="navbar-brand" href="/">conduit</a>
         <ul className="nav navbar-nav pull-xs-right">
-          <li className="nav-item">
-            {/* Add "active" className when you're on that page" */}
-            <a className="nav-link active" href="/">Home</a>
-          </li>
-          <li className="nav-item">
-            <a className="nav-link" href="/login">Sign in</a>
-          </li>
-          <li className="nav-item">
-            <a className="nav-link" href="/register">Sign up</a>
-          </li>
+          {
+            links.map((link) => (
+              <li className="nav-item" key={link.href}>
+                {/* Add "active" className when you're on that page" */}
+                <a href={link.href} className={clsx('nav-link', {
+                    active: pathname === link.href,
+                })}>
+                    {link.label}
+                </a>
+              </li>
+            ))
+          }
         </ul>
       </div>
     </nav>
