@@ -7,9 +7,11 @@ import {
   type SetStateAction,
   type FormEventHandler,
 } from 'react';
+import { useRouter } from 'next/navigation';
 
 import { extractResponseInfo } from '../lib/handleResponse';
 import { handleError } from '../lib/handlerError';
+import { isSignUpUserError } from '../lib/users/isSignUpUserError';
 
 export default function SignUpPage() {
   const [username, setUsername] = useState('');
@@ -17,8 +19,9 @@ export default function SignUpPage() {
   const [password, setPassword] = useState('');
 
   const [formIsDisabled, setFormIsDisabled] = useState(false);
+  const [errors, setErrors] = useState<SignUpUserError>();
 
-  const [errors, setErrors] = useState<SignUpUserError>()
+  const router = useRouter();
 
   const onValueChange: InputHTMLAttributes<HTMLInputElement>['onChange'] =
     (event) => {
@@ -69,10 +72,18 @@ export default function SignUpPage() {
         });
       }
 
-      // TODO: Go back to root page. Save received token in somewhere.
+      const { user: signedUpUser } = responseBody as SignUpUserSuccessResponse;
+
+      localStorage.setItem("jwtToken", signedUpUser.token);
+
+      router.push('/');
     } catch (error) {
       handleError(error, (error) => {
-        setErrors(error.cause as SignUpUserError);
+        if (isSignUpUserError(error.cause)) {
+          setErrors(error.cause as SignUpUserError);
+        } else {
+          console.error(error);
+        }
       });
     } finally {
       setFormIsDisabled(false);

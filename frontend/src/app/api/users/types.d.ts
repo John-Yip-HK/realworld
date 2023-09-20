@@ -6,7 +6,7 @@ type User = {
 
 type SignInCredentials = Omit<User, 'username'>;
 
-type SignUpUserError = Record<keyof User, string[]>;
+type SignUpUserError = Partial<Record<keyof User, string[]>>;
 type SignUpUserErrorResponse = {
   errors: SignUpUserError;
 }
