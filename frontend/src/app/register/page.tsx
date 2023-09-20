@@ -8,12 +8,17 @@ import {
   type FormEventHandler,
 } from 'react';
 
+import { extractResponseInfo } from '../lib/handleResponse';
+import { handleError } from '../lib/handlerError';
+
 export default function SignUpPage() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const [formIsDisabled, setFormIsDisabled] = useState(false);
+
+  const [errors, setErrors] = useState<SignUpUserError>()
 
   const onValueChange: InputHTMLAttributes<HTMLInputElement>['onChange'] =
     (event) => {
@@ -42,6 +47,7 @@ export default function SignUpPage() {
     event.preventDefault();
 
     setFormIsDisabled(true);
+    setErrors(undefined);
 
     const user: User = {
       username,
@@ -52,12 +58,22 @@ export default function SignUpPage() {
     try {
       const signUpNewUserResponse = await fetch('/api/users', {
         method: 'POST',
-        body: JSON.stringify({ user }),
+        body: JSON.stringify(user),
       });
 
-      console.log(await signUpNewUserResponse.json());
+      const { responseBody, ok, statusText } = await extractResponseInfo<SignUpUserResponse>(signUpNewUserResponse);
+
+      if (!ok) {
+        throw new Error(statusText, {
+          cause: (responseBody as SignUpUserErrorResponse).errors,
+        });
+      }
+
+      // TODO: Go back to root page. Save received token in somewhere.
     } catch (error) {
-      console.info(error);
+      handleError(error, (error) => {
+        setErrors(error.cause as SignUpUserError);
+      });
     } finally {
       setFormIsDisabled(false);
     }
@@ -73,9 +89,25 @@ export default function SignUpPage() {
               <a href="/login">Have an account?</a>
             </p>
 
-            {/* <ul className="error-messages">
-              <li>That email is already taken</li>
-            </ul> */}
+            {
+              errors
+              ? (
+                <ul className="error-messages">
+                  {
+                    Object.entries(errors).map(([fieldName, errorArray]) => {
+                      return errorArray.map((error) => {
+                        const itemKey = `${fieldName} ${error}`;
+
+                        return (
+                          <li key={itemKey}>{`That ${fieldName} ${error}`}</li>
+                        );
+                      });
+                    })
+                  }
+                </ul>
+              )
+              : null
+            }
 
             <form onSubmit={signUpNewUser}>
               <fieldset disabled={formIsDisabled}>
