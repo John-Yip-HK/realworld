@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { clsx } from 'clsx';
+import { hasJwtToken } from '@/app/lib/users/jwtToken';
 
 type LinkProps = {
   href: string;
@@ -14,6 +15,10 @@ const links: LinkProps[] = [
     label: 'Home'
   },
   {
+    href: '/zustard',
+    label: 'Test Zustard'
+  },
+  {
     href: '/login',
     label: 'Sign in'
   },
@@ -24,7 +29,7 @@ const links: LinkProps[] = [
 ]
 
 export default function Navbar() {
-  const isAuthenticated = false;
+  const isAuthenticated = hasJwtToken();
   const pathname = usePathname();
 
   const unauthenticatedUserNavbar = (

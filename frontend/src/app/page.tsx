@@ -1,25 +1,64 @@
+'use client';
+
+import { type MouseEventHandler, useState } from "react";
+import { hasJwtToken } from "./lib/users/jwtToken";
+import { clsx } from "clsx";
+
+const tabs = [
+  {
+    linkName: 'your-feed',
+    label: 'Your Feed',
+  },
+  {
+    linkName: 'global-feed',
+    label: 'Global Feed',
+  },
+];
+
 export default function HomePage() {
+  const hasAuthToken = hasJwtToken();
+  const [selectedTab, setSelectedTab] = useState(tabs[hasAuthToken ? 0 : 1].linkName);
+
+  const navLinkCls = (linkName: string) => clsx('nav-link', {
+    active: selectedTab === linkName,
+  });
+
+  const onTabChange = (linkName: string): MouseEventHandler<HTMLAnchorElement> => (event) => {
+    event.preventDefault();
+
+    setSelectedTab(linkName);
+  };
+
   return (
     <main>
       <div className="home-page">
-        <div className="banner">
-          <div className="container">
-            <h1 className="logo-font">conduit</h1>
-            <p>A place to share your knowledge.</p>
-          </div>
-        </div>
+        {
+          hasAuthToken ?
+          null :
+          (
+            <div className="banner">
+              <div className="container">
+                <h1 className="logo-font">conduit</h1>
+                <p>A place to share your knowledge.</p>
+              </div>
+            </div>
+          )
+        }
 
         <div className="container page">
           <div className="row">
             <div className="col-md-9">
               <div className="feed-toggle">
                 <ul className="nav nav-pills outline-active">
-                  {/* <li className="nav-item">
-                    <a className="nav-link" href="/">Your Feed</a>
-                  </li> */}
-                  <li className="nav-item">
-                    <a className="nav-link active" href="/">Global Feed</a>
-                  </li>
+                  {
+                    tabs
+                      .filter((tab) => hasAuthToken || tab.linkName !== 'your-feed')
+                      .map(({ linkName, label }) => (
+                        <li className="nav-item" key={linkName}>
+                          <a className={navLinkCls(linkName)} onClick={onTabChange(linkName)}>{label}</a>
+                        </li>
+                      ))
+                  }
                 </ul>
               </div>
 
