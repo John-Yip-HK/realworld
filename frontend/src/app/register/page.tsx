@@ -9,9 +9,10 @@ import {
 } from 'react';
 import { useRouter } from 'next/navigation';
 
-import { extractResponseInfo } from '../lib/handleResponse';
-import { handleError } from '../lib/handlerError';
-import { isSignUpUserError } from '../lib/users/isSignUpUserError';
+import { extractResponseInfo } from '../lib/api/handleResponse';
+import { handleError } from '../lib/api/handlerError';
+import { DUMMY_USER_OBJECT, JWT_TOKEN, UNKNOWN_ERROR_OBJECT } from '../constants/user';
+import { isAuthError } from '../lib/users/isAuthError';
 
 export default function SignUpPage() {
   const [username, setUsername] = useState('');
@@ -19,7 +20,7 @@ export default function SignUpPage() {
   const [password, setPassword] = useState('');
 
   const [formIsDisabled, setFormIsDisabled] = useState(false);
-  const [errors, setErrors] = useState<SignUpUserError>();
+  const [errors, setErrors] = useState<AuthError>();
 
   const router = useRouter();
 
@@ -68,21 +69,21 @@ export default function SignUpPage() {
 
       if (!ok) {
         throw new Error(statusText, {
-          cause: (responseBody as SignUpUserErrorResponse).errors,
+          cause: (responseBody as AuthErrorResponse).errors,
         });
       }
 
-      const { user: signedUpUser } = responseBody as SignUpUserSuccessResponse;
+      const { user: signedUpUser } = responseBody as SuccessResponse;
 
-      localStorage.setItem("jwtToken", signedUpUser.token);
+      localStorage.setItem(JWT_TOKEN, signedUpUser.token);
 
       router.push('/');
     } catch (error) {
       handleError(error, (error) => {
-        if (isSignUpUserError(error.cause)) {
-          setErrors(error.cause as SignUpUserError);
+        if (isAuthError(error.cause)) {
+          setErrors(error.cause as AuthError);
         } else {
-          console.error(error);
+          setErrors(UNKNOWN_ERROR_OBJECT);
         }
       });
     } finally {
@@ -107,10 +108,11 @@ export default function SignUpPage() {
                   {
                     Object.entries(errors).map(([fieldName, errorArray]) => {
                       return errorArray.map((error) => {
-                        const itemKey = `${fieldName} ${error}`;
+                        const itemValue = `${fieldName} ${error}`;
+                        const isFieldNameUserKey = Object.keys(DUMMY_USER_OBJECT).includes(fieldName);
 
                         return (
-                          <li key={itemKey}>{`That ${fieldName} ${error}`}</li>
+                          <li key={itemValue}>{`${isFieldNameUserKey ? 'That ' : ''}${fieldName} ${error}`}</li>
                         );
                       });
                     })

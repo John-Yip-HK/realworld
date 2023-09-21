@@ -1,8 +1,8 @@
 import path from "node:path";
 import { NextResponse } from "next/server";
 
-import { extractResponseInfo } from "@/app/lib/handleResponse";
-import { DEFAULT_HEADERS, USERS_PATH } from "../contants";
+import { extractResponseInfo } from "@/app/lib/api/handleResponse";
+import { DEFAULT_HEADERS, USERS_PATH } from "../constants";
 
 export async function POST(request: Request) {
   const newUser: User = await request.json();

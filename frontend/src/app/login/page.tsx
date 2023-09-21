@@ -7,12 +7,21 @@ import {
   type FormEventHandler,
   useState,
 } from "react";
+import { useRouter } from "next/navigation";
+
+import { extractResponseInfo } from "../lib/api/handleResponse";
+import { handleError } from "../lib/api/handlerError";
+import { isAuthError } from "../lib/users/isAuthError";
+import { JWT_TOKEN, UNKNOWN_ERROR_OBJECT } from "../constants/user";
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [errors, setErrors] = useState<AuthError>();
+
+  const router = useRouter();
 
   const onValueChange: InputHTMLAttributes<HTMLInputElement>['onChange'] =
     (event) => {
@@ -38,18 +47,38 @@ export default function LoginPage() {
     event.preventDefault();
 
     setIsLoggingIn(true);
+    setErrors(undefined);
+
+    const logInCredentials: LogInCredentials = {
+      email, password,
+    }
 
     try {
-      const signInResponse = await fetch('/api/users/signin', {
+      const logInResponse = await fetch('/api/users/login', {
         method: 'POST',
-        body: JSON.stringify({
-          user: {
-            email,
-            password,
-          }
-        }),
+        body: JSON.stringify(logInCredentials),
       });
-    } finally {
+
+      const { responseBody, ok, statusText } = await extractResponseInfo<LogInUserResponse>(logInResponse);
+
+      if (!ok) {
+        throw new Error(statusText, {
+          cause: (responseBody as AuthErrorResponse).errors,
+        })
+      }
+
+      localStorage.setItem(JWT_TOKEN, (responseBody as SuccessResponse).user.token);
+
+      router.push('/');
+    } catch (error) {
+      handleError(error, (error) => {
+        if (isAuthError(error.cause)) {
+          setErrors(error.cause as AuthError);
+        } else {
+          setErrors(UNKNOWN_ERROR_OBJECT);
+        }
+      });
+    }finally {
       setIsLoggingIn(false);
     }
   }
@@ -64,17 +93,33 @@ export default function LoginPage() {
               <a href="/register">Need an account?</a>
             </p>
 
-            {/* <ul className="error-messages">
-              <li>That email is already taken</li>
-            </ul> */}
+            {
+              errors
+              ? (
+                <ul className="error-messages">
+                  {
+                    Object.entries(errors).map(([fieldName, errorArray]) => {
+                      return errorArray.map((error) => {
+                        const itemValue = `${fieldName} ${error}`;
+
+                        return (
+                          <li key={itemValue}>{itemValue}</li>
+                        );
+                      });
+                    })
+                  }
+                </ul>
+              )
+              : null
+            }
 
             <form onSubmit={logInUser}>
               <fieldset disabled={isLoggingIn}>
                 <fieldset className="form-group">
-                  <input className="form-control form-control-lg" type="email" placeholder="Email" value={email} onChange={onValueChange} />
+                  <input className="form-control form-control-lg" type="email" name="email" placeholder="Email" value={email} onChange={onValueChange} />
                 </fieldset>
                 <fieldset className="form-group">
-                  <input className="form-control form-control-lg" type="password" placeholder="Password" value={password} onChange={onValueChange} />
+                  <input className="form-control form-control-lg" type="password" name="password" placeholder="Password" value={password} onChange={onValueChange} />
                 </fieldset>
                 <button className="btn btn-lg btn-primary pull-xs-right" type="submit">Sign in</button>
               </fieldset>

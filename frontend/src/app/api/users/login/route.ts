@@ -1,23 +1,21 @@
 import path from "node:path";
 import { NextResponse } from "next/server";
 
-import { extractResponseInfo } from "@/app/lib/handleResponse";
-import { DEFAULT_HEADERS, USERS_PATH } from "../../contants";
+import { extractResponseInfo } from "@/app/lib/api/handleResponse";
+import { DEFAULT_HEADERS, LOGIN_PATH, } from "../../constants";
 
 export async function POST(request: Request) {
-  const userCredentials: SignInCredentials = await request.json();
+  const userCredentials: LogInCredentials = await request.json();
 
-  // const signInResponse = await fetch(path.join(process.env.API_URL as string, USERS_PATH, 'login'), {
-  //   method: 'POST',
-  //   body: JSON.stringify({ user: userCredentials, }),
-  //   headers: DEFAULT_HEADERS,
-  // });
+  const logInResponse = await fetch(path.join(process.env.API_URL as string, LOGIN_PATH), {
+    method: 'POST',
+    body: JSON.stringify({ user: userCredentials, }),
+    headers: DEFAULT_HEADERS,
+  });
 
-  // const { responseBody, ...otherFields } = await extractResponseInfo(signInResponse);
+  const { responseBody, status, statusText } = await extractResponseInfo<LogInUserResponse>(logInResponse);
 
-  // return NextResponse.json({
-  //   user: userCredentials,
-  // }, otherFields);
-
-  return NextResponse.json({ user: userCredentials, });
+  return NextResponse.json(responseBody, {
+    status, statusText
+  });
 }

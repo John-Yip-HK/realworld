@@ -1,23 +1,26 @@
-type User = {
+interface User {
   username: string;
   email: string;
   password: string;
 }
 
-type SignInCredentials = Omit<User, 'username'>;
-
-type SignUpUserError = Partial<Record<keyof User, string[]>>;
-type SignUpUserErrorResponse = {
-  errors: SignUpUserError;
-}
-
-type SignUpUserSuccess = Omit<User, 'password'> & {
+type UserMetadata = Pick<User, 'username' | 'email'> & {
   token: string;
-  bio: string;
+  bio: string | null;
   image: string;
 };
-type SignUpUserSuccessResponse = {
-  user: SignUpUserSuccess;
+
+type AuthError = Record<string, string[]>
+type AuthErrorResponse = {
+  errors: AuthError;
+}
+type SuccessResponse = {
+  user: UserMetadata;
 }
 
-type SignUpUserResponse = SignUpUserSuccessResponse | SignUpUserErrorResponse;
+/* Sign up user types */
+type SignUpUserResponse = SuccessResponse | AuthErrorResponse;
+
+/* Log in user types */
+type LogInCredentials = Pick<User, 'email' | 'password'>;
+type LogInUserResponse = SuccessResponse | AuthErrorResponse;
