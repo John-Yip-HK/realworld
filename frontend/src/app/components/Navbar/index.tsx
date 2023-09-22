@@ -1,30 +1,20 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { clsx } from 'clsx';
 import { hasJwtToken } from '@/app/lib/users/jwtToken';
 
-type LinkProps = {
-  href: string;
-  label: string;
-}
-
-const links: LinkProps[] = [
+const links: NavLinkProps[] = [
   {
     href: '/',
-    label: 'Home'
-  },
-  {
-    href: '/zustard',
-    label: 'Test Zustard'
+    label: 'Home',
   },
   {
     href: '/login',
-    label: 'Sign in'
+    label: 'Sign in',
   },
   {
     href: '/register',
-    label: 'Sign up'
+    label: 'Sign up',
   },
 ]
 
@@ -42,9 +32,9 @@ export default function Navbar() {
               <li className="nav-item" key={link.href}>
                 {/* Add "active" className when you're on that page" */}
                 <a href={link.href} className={clsx('nav-link', {
-                    active: pathname === link.href,
+                  active: pathname === link.href,
                 })}>
-                    {link.label}
+                  {link.label}
                 </a>
               </li>
             ))
