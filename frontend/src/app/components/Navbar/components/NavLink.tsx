@@ -1,5 +1,7 @@
 import { clsx } from 'clsx';
 
+import type { NavLinkProps } from '../types';
+
 type Props = {
   link: NavLinkProps;
   isActive: boolean;
@@ -14,7 +16,7 @@ export default function NavLink({
       <a href={link.href} className={clsx('nav-link', {
         active: isActive,
       })}>
-        {link.label}
+        {link.children}
       </a>
     </li>
   )

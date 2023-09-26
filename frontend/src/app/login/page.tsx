@@ -13,6 +13,7 @@ import { extractResponseInfo } from "../lib/api/handleResponse";
 import { handleError } from "../lib/api/handlerError";
 import { isAuthError } from "../lib/users/isAuthError";
 import { JWT_TOKEN, UNKNOWN_ERROR_OBJECT } from "../constants/user";
+import { customFetch } from "../lib/api/customFetch";
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -54,9 +55,10 @@ export default function LoginPage() {
     }
 
     try {
-      const logInResponse = await fetch('/api/users/login', {
+      const logInResponse = await customFetch('/api/users/login', {
         method: 'POST',
-        body: JSON.stringify(logInCredentials),
+        body: logInCredentials,
+        loggedIn: false,
       });
 
       const { responseBody, ok, statusText } = await extractResponseInfo<LogInUserResponse>(logInResponse);

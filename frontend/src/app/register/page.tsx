@@ -13,6 +13,7 @@ import { extractResponseInfo } from '../lib/api/handleResponse';
 import { handleError } from '../lib/api/handlerError';
 import { DUMMY_USER_OBJECT, JWT_TOKEN, UNKNOWN_ERROR_OBJECT } from '../constants/user';
 import { isAuthError } from '../lib/users/isAuthError';
+import { customFetch } from '../lib/api/customFetch';
 
 export default function SignUpPage() {
   const [username, setUsername] = useState('');
@@ -60,9 +61,10 @@ export default function SignUpPage() {
     };
 
     try {
-      const signUpNewUserResponse = await fetch('/api/users', {
+      const signUpNewUserResponse = await customFetch('/api/users', {
         method: 'POST',
-        body: JSON.stringify(user),
+        body: user,
+        loggedIn: false,
       });
 
       const { responseBody, ok, statusText } = await extractResponseInfo<SignUpUserResponse>(signUpNewUserResponse);
