@@ -1,36 +1,48 @@
-import { getJwtToken } from "@/app/lib/users/jwtToken";
-import { useEffect, useState } from "react"
-import NavLink from "./NavLink";
-import { customFetch } from "@/app/lib/api/customFetch";
+/* eslint-disable @next/next/no-img-element */
+import { useEffect, useState } from 'react'
+import { getJsonFetch } from '@/app/lib/api/customFetch';
 
-type UseNavLinkProps = {}
+import NavLink from './NavLink';
+import styles from '../styles.module.scss';
+import Image from 'next/image';
 
-export default function UserNavLink({}: UseNavLinkProps) {
-  const [username, setUsername] = useState('Haha');
-  const [imageUrl, setImageUrl] = useState('https://api.realworld.io/images/smiley-cyrus.jpeg');
+interface UserNavLinkProps {
+  isAuthenticated: boolean;
+};
 
-  const authToken = getJwtToken();
+export default function UserNavLink({
+  isAuthenticated
+}: UserNavLinkProps) {
+  const [username, setUsername] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
+
+  const anchorClassName = isAuthenticated ? undefined : styles['nav-link__hidden'];
 
   useEffect(() => {
-    customFetch('/api/user')
-      .then((response) => response.json())
-      .then(console.info);
-  }, [authToken]);
+    if (isAuthenticated) {
+      getJsonFetch('/api/user')
+        .then(({ user: { username, image } }) => {
+          setUsername(username);
+          setImageUrl(image);
+        });
+    }
+  }, [isAuthenticated]);
 
   return (
     <NavLink
-      key="/profile"
+      key='/profile'
       link={{
         href: '/profile',
         children: (
           <>
-            <img src={imageUrl} className="user-pic" />
+            <img alt={username !== '' ? `Image of ${username}` : 'Empty user image'} src={imageUrl} className='user-pic' />
             {username}
           </>
         ),
         protectedLink: true
       }}
       isActive={false}
+      className={anchorClassName}
     />
   )
 }

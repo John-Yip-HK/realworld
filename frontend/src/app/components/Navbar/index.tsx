@@ -8,6 +8,9 @@ import type { NavLinkProps } from './types';
 import NavLink from './components/NavLink';
 import UserNavLink from './components/UserNavLink';
 
+import styles from './styles.module.scss';
+import { useEffect, useState } from 'react';
+
 const links: NavLinkProps[] = [
   {
     href: '/',
@@ -26,27 +29,25 @@ const links: NavLinkProps[] = [
   },
   {
     href: '/editor',
-    children: (
-      <>
-        <i className="ion-compose"></i>&nbsp;New Article
-      </>
-    ),
+    children: ' New Article',
     protectedLink: true,
   },
   {
     href: '/settings',
-    children: (
-      <>
-        <i className="ion-gear-a"></i>&nbsp;Settings
-      </>
-    ),
+    children: ' Settings',
     protectedLink: true,
   },
 ]
 
 export default function Navbar() {
-  const isAuthenticated = hasJwtToken();
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const pathname = usePathname();
+
+  useEffect(() => {
+    setIsAuthenticated(hasJwtToken());
+    setIsLoaded(true);
+  }, [])
 
   return (
     <nav className="navbar navbar-light">
@@ -55,23 +56,23 @@ export default function Navbar() {
         <ul className="nav navbar-nav pull-xs-right">
           {
             links.map((link) => {
-              const showLink = link.href === '/' || isAuthenticated === link.protectedLink;
+              const { href } = link;
+              const shouldShow = href === '/' || isLoaded && (isAuthenticated ? link.protectedLink : !link.protectedLink);
+              const extraStylingCls = shouldShow ? undefined : styles['nav-link__hidden'];
 
-              return showLink ?
+              return (
                 <NavLink
-                  key={link.href}
+                  key={href}
                   link={link}
-                  isActive={pathname === link.href}
-                /> :
-                null;
-              }
-            )
+                  isActive={pathname === href}
+                  className={extraStylingCls}
+                />
+              );
+            })
           }
-          {
-            isAuthenticated ?
-            <UserNavLink /> :
-            null
-          }
+          <UserNavLink
+            isAuthenticated={isAuthenticated}
+          />
         </ul>
       </div>
     </nav>

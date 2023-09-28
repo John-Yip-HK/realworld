@@ -50,3 +50,7 @@ export const customFetch = (url: string, options: FetchOptions = {
   
   return fetch(url, obj);
 };
+
+export const getJsonFetch = (url: string, options: FetchOptions = {
+  loggedIn: true,
+}) => customFetch(url, options).then(response => response.json());

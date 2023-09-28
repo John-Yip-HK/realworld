@@ -32,7 +32,7 @@ export default function HomePage() {
   return (
     <main>
       <div className="home-page">
-        {
+        {/* {
           hasAuthToken ?
           null :
           (
@@ -43,14 +43,14 @@ export default function HomePage() {
               </div>
             </div>
           )
-        }
+        } */}
 
         <div className="container page">
           <div className="row">
             <div className="col-md-9">
               <div className="feed-toggle">
                 <ul className="nav nav-pills outline-active">
-                  {
+                  {/* {
                     tabs
                       .filter((tab) => hasAuthToken || tab.linkName !== 'your-feed')
                       .map(({ linkName, label }) => (
@@ -58,7 +58,7 @@ export default function HomePage() {
                           <a className={navLinkCls(linkName)} onClick={onTabChange(linkName)}>{label}</a>
                         </li>
                       ))
-                  }
+                  } */}
                 </ul>
               </div>
 

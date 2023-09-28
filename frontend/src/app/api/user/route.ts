@@ -4,17 +4,18 @@ import { USER_PATH } from "../constants";
 
 export async function GET(request: Request) {
   const { headers } = request;
+  const authToken = headers.get('authorization') || '';
 
   const getUserResponse = await fetch(process.env.API_URL + USER_PATH, {
-    method: 'GET',
     headers: {
-      'Authorization': `Bearer ${headers.get('Authorization')}`,
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
+      'Authorization': authToken,
     },
   });
 
-  const { responseBody, ...otherFields } = await extractResponseInfo(getUserResponse);
+  const { responseBody, status, statusText } = await extractResponseInfo(getUserResponse);
 
-  return NextResponse.json(responseBody, otherFields);
+  return NextResponse.json(responseBody, {
+    status,
+    statusText,
+  });
 }
