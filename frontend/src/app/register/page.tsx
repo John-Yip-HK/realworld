@@ -14,6 +14,7 @@ import { handleError } from '../lib/api/handlerError';
 import { DUMMY_USER_OBJECT, JWT_TOKEN, UNKNOWN_ERROR_OBJECT } from '../constants/user';
 import { isAuthError } from '../lib/users/isAuthError';
 import { customFetch } from '../lib/api/customFetch';
+import { useAuthStore } from '../lib/store/useAuthStore';
 
 export default function SignUpPage() {
   const [username, setUsername] = useState('');
@@ -22,6 +23,7 @@ export default function SignUpPage() {
 
   const [formIsDisabled, setFormIsDisabled] = useState(false);
   const [errors, setErrors] = useState<AuthError>();
+  const setAuthToken = useAuthStore((state) => state.setAuthToken);
 
   const router = useRouter();
 
@@ -76,8 +78,9 @@ export default function SignUpPage() {
       }
 
       const { user: signedUpUser } = responseBody as SuccessResponse;
+      const { token: authToken } = signedUpUser;
 
-      localStorage.setItem(JWT_TOKEN, signedUpUser.token);
+      setAuthToken(authToken);
 
       router.push('/');
     } catch (error) {

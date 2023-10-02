@@ -9,13 +9,14 @@ interface UserNavLinkProps {
   isAuthenticated: boolean;
 };
 
+const hideLinkClass = styles['nav-link__hidden'];
+
 export default function UserNavLink({
   isAuthenticated
 }: UserNavLinkProps) {
   const [username, setUsername] = useState('');
   const [imageUrl, setImageUrl] = useState('');
-
-  const anchorClassName = isAuthenticated ? undefined : styles['nav-link__hidden'];
+  const [anchorClassName, setAnchorClassName] = useState<string | undefined>(hideLinkClass);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -23,7 +24,10 @@ export default function UserNavLink({
         .then(({ user: { username, image } }) => {
           setUsername(username);
           setImageUrl(image);
+          setAnchorClassName(undefined);
         });
+    } else {
+      setAnchorClassName(hideLinkClass);
     }
   }, [isAuthenticated]);
 

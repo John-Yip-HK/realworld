@@ -1,15 +1,14 @@
+'use client';
+
 import { clsx } from 'clsx';
 
 import styles from './styles.module.scss';
+import { useAuthStore } from '@/app/lib/store/useAuthStore';
 
-type MainPageBannerProps = {
-  hasAuthToken: boolean;
-}
-
-export default function MainPageBanner({
-  hasAuthToken
-}: MainPageBannerProps) {
-  const hideBannerCls = hasAuthToken ? styles['banner__hidden'] : undefined;
+export default function MainPageBanner() {
+  const authToken = useAuthStore((state) => state.authToken);
+  
+  const hideBannerCls = authToken !== undefined ? styles['banner__hidden'] : undefined;
   const bannerCls = clsx('banner', hideBannerCls);
   
   return (

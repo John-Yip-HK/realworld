@@ -2,14 +2,13 @@
 
 import { usePathname } from 'next/navigation';
 
-import { hasJwtToken } from '@/app/lib/users/jwtToken';
-
 import type { NavLinkProps } from './types';
 import NavLink from './components/NavLink';
 import UserNavLink from './components/UserNavLink';
 
 import styles from './styles.module.scss';
 import { useEffect, useState } from 'react';
+import { useAuthStore } from '@/app/lib/store/useAuthStore';
 
 const links: NavLinkProps[] = [
   {
@@ -40,14 +39,8 @@ const links: NavLinkProps[] = [
 ]
 
 export default function Navbar() {
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const authToken = useAuthStore((state) => state.authToken);
   const pathname = usePathname();
-
-  useEffect(() => {
-    setIsAuthenticated(hasJwtToken());
-    setIsLoaded(true);
-  }, [])
 
   return (
     <nav className="navbar navbar-light">
@@ -57,7 +50,7 @@ export default function Navbar() {
           {
             links.map((link) => {
               const { href } = link;
-              const shouldShow = href === '/' || isLoaded && (isAuthenticated ? link.protectedLink : !link.protectedLink);
+              const shouldShow = href === '/' || (authToken ? link.protectedLink : !link.protectedLink);
               const extraStylingCls = shouldShow ? undefined : styles['nav-link__hidden'];
 
               return (
@@ -71,7 +64,7 @@ export default function Navbar() {
             })
           }
           <UserNavLink
-            isAuthenticated={isAuthenticated}
+            isAuthenticated={authToken !== undefined}
           />
         </ul>
       </div>
