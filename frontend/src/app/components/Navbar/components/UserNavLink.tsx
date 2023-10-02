@@ -4,7 +4,6 @@ import { getJsonFetch } from '@/app/lib/api/customFetch';
 
 import NavLink from './NavLink';
 import styles from '../styles.module.scss';
-import Image from 'next/image';
 
 interface UserNavLinkProps {
   isAuthenticated: boolean;

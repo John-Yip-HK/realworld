@@ -3,6 +3,7 @@
 import { type MouseEventHandler, useState } from "react";
 import { hasJwtToken } from "./lib/users/jwtToken";
 import { clsx } from "clsx";
+import MainPageBanner from "./components/MainPageBanner";
 
 const tabs = [
   {
@@ -32,18 +33,7 @@ export default function HomePage() {
   return (
     <main>
       <div className="home-page">
-        {/* {
-          hasAuthToken ?
-          null :
-          (
-            <div className="banner">
-              <div className="container">
-                <h1 className="logo-font">conduit</h1>
-                <p>A place to share your knowledge.</p>
-              </div>
-            </div>
-          )
-        } */}
+        <MainPageBanner hasAuthToken={hasAuthToken} />
 
         <div className="container page">
           <div className="row">
@@ -133,7 +123,7 @@ export default function HomePage() {
               </div>
             </div>
           </div>
-        </div>
+        Main</div>
       </div>
     </main>
   )
