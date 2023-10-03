@@ -1,10 +1,9 @@
+import ArticlePagination from './components/ArticlePagination';
+import ArticlePreviews from './components/ArticlePreviews';
+import MainPageBanner from './components/MainPageBanner';
+import MainPageTabs from './components/MainPageTabs';
 
-import ArticlePagination from "./components/ArticlePagination";
-import ArticlePreviews from "./components/ArticlePreviews";
-import MainPageBanner from "./components/MainPageBanner";
-import MainPageTabs from "./components/MainPageTabs";
-
-import Tags from "./components/Tags";
+import Tags from './components/Tags';
 
 export default function HomePage() {
   return (

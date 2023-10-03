@@ -1,13 +1,10 @@
 'use client';
 
-import { useState, type MouseEventHandler } from 'react';
-import { clsx } from 'clsx';
+import { useState, type MouseEventHandler, type ReactElement, useEffect } from 'react';
 
-import { useAuthStore } from '@/app/lib/store/useAuthStore';
+import { useAppStore } from '@/app/lib/store/useAppStore';
 
-import styles from './styles.module.scss';
-
-type Props = {}
+import Tab from './components/Tab';
 
 const tabs = [
   {
@@ -22,34 +19,69 @@ const tabs = [
   },
 ];
 
-export default function MainPageTabs({}: Props) {
-  const hasAuthToken = useAuthStore((state) => state.authToken) !== undefined;
-  const [selectedTab, setSelectedTab] = useState(tabs[hasAuthToken ? 0 : 1].linkName);
+export default function MainPageTabs() {
+  const selectedTag = useAppStore(state => state.selectedTag);
+  const resetTag = useAppStore(state => state.resetTag);
+  const hasAuthToken = useAppStore(state => state.authToken) !== undefined;
 
-  const navLinkCls = (linkName: string) => clsx('nav-link', {
-    active: selectedTab === linkName,
-  });
+  const initialSelectedTab = tabs[hasAuthToken ? 0 : 1];
+  
+  const [selectedTab, setSelectedTab] = useState(initialSelectedTab.linkName);
+  const [tagTab, setTagTab] = useState<ReactElement>();
 
   const onTabChange = (linkName: string): MouseEventHandler<HTMLAnchorElement> => (event) => {
     event.preventDefault();
+
+    if (selectedTag && linkName !== selectedTag) {
+      resetTag();
+    } 
+    
     setSelectedTab(linkName);
   };
-  
+
+  useEffect(() => {
+    let newTagTab: typeof tagTab = undefined;
+    
+    if (selectedTag) {
+      newTagTab = (
+        <Tab 
+          key={selectedTag}
+          linkName={selectedTag} 
+          label={selectedTag} 
+          hideIfNoAuthToken={false}
+          hasAuthToken={hasAuthToken} 
+          isActive
+          onTabClick={onTabChange}          
+        />
+      );
+
+      setSelectedTab(selectedTag);
+    }
+
+    setTagTab(newTagTab);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTag, hasAuthToken]);
+
   return (
   <div className="feed-toggle">
     <ul className="nav nav-pills outline-active">
       {
         tabs
-          .map(({ linkName, label, hideIfNoAuthToken }) => {
-            const hideTabCls = styles['nav-item__hidden'];
-            
+          .map((tabProps) => {
+            const { linkName } = tabProps;
+
             return (
-              <li key={linkName} className={clsx('nav-item', !hasAuthToken && hideIfNoAuthToken ? hideTabCls : undefined)}>
-                <a className={navLinkCls(linkName)} onClick={onTabChange(linkName)}>{label}</a>
-              </li>
+              <Tab
+                key={linkName}
+                onTabClick={onTabChange}
+                isActive={selectedTab === linkName}
+                hasAuthToken={hasAuthToken}
+                {...tabProps}
+              />
             );
           })
       }
+      {tagTab}
     </ul>
   </div>
   )

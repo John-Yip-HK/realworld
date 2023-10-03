@@ -1,5 +1,5 @@
 import { DEFAULT_HEADERS } from "@/app/api/constants";
-import { useAuthStore } from "../store/useAuthStore";
+import { useAppStore } from "../store/useAppStore";
 
 export type FetchOptions = {
   method?: string;
@@ -35,7 +35,7 @@ export const customFetch = (url: string, options: FetchOptions = {
     }
 
     if (options.loggedIn) {
-      const authToken = useAuthStore.getState().authToken;
+      const authToken = useAppStore.getState().authToken;
 
       if (authToken === null) {
         throw new Error('You are not logged in.');

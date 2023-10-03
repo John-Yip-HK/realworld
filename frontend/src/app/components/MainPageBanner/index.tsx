@@ -3,10 +3,10 @@
 import { clsx } from 'clsx';
 
 import styles from './styles.module.scss';
-import { useAuthStore } from '@/app/lib/store/useAuthStore';
+import { useAppStore } from '@/app/lib/store/useAppStore';
 
 export default function MainPageBanner() {
-  const authToken = useAuthStore((state) => state.authToken);
+  const authToken = useAppStore(state => state.authToken);
   
   const hideBannerCls = authToken !== undefined ? styles['banner__hidden'] : undefined;
   const bannerCls = clsx('banner', hideBannerCls);

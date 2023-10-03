@@ -14,7 +14,7 @@ import { handleError } from '../lib/api/handlerError';
 import { DUMMY_USER_OBJECT, JWT_TOKEN, UNKNOWN_ERROR_OBJECT } from '../constants/user';
 import { isAuthError } from '../lib/users/isAuthError';
 import { customFetch } from '../lib/api/customFetch';
-import { useAuthStore } from '../lib/store/useAuthStore';
+import { useAppStore } from '../lib/store/useAppStore';
 
 export default function SignUpPage() {
   const [username, setUsername] = useState('');
@@ -23,7 +23,7 @@ export default function SignUpPage() {
 
   const [formIsDisabled, setFormIsDisabled] = useState(false);
   const [errors, setErrors] = useState<AuthError>();
-  const setAuthToken = useAuthStore((state) => state.setAuthToken);
+  const setAuthToken = useAppStore(state => state.setAuthToken);
 
   const router = useRouter();
 

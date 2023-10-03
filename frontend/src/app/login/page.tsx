@@ -14,7 +14,7 @@ import { handleError } from "../lib/api/handlerError";
 import { isAuthError } from "../lib/users/isAuthError";
 import { JWT_TOKEN, UNKNOWN_ERROR_OBJECT } from "../constants/user";
 import { customFetch } from "../lib/api/customFetch";
-import { useAuthStore } from "../lib/store/useAuthStore";
+import { useAppStore } from "../lib/store/useAppStore";
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -22,7 +22,7 @@ export default function LoginPage() {
 
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [errors, setErrors] = useState<AuthError>();
-  const setAuthToken = useAuthStore((state) => state.setAuthToken);
+  const setAuthToken = useAppStore(state => state.setAuthToken);
 
   const router = useRouter();
 

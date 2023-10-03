@@ -8,7 +8,7 @@ import UserNavLink from './components/UserNavLink';
 
 import styles from './styles.module.scss';
 import { useEffect, useState } from 'react';
-import { useAuthStore } from '@/app/lib/store/useAuthStore';
+import { useAppStore } from '@/app/lib/store/useAppStore';
 
 const links: NavLinkProps[] = [
   {
@@ -39,7 +39,7 @@ const links: NavLinkProps[] = [
 ]
 
 export default function Navbar() {
-  const authToken = useAuthStore((state) => state.authToken);
+  const authToken = useAppStore(state => state.authToken);
   const pathname = usePathname();
 
   return (
