@@ -1,53 +1,28 @@
-interface ArticlePreviewProps {
+import { getJsonFetch } from "@/app/lib/api/customFetch";
+import ArticlePreview from "./components/ArticlePreview";
 
+async function getArticles() {
+  // TODO: Dynamically change URL hostname in different NODE_ENV values.
+  const getArticlesPromise = getJsonFetch('http://localhost:3000/api/articles', {
+    loggedIn: false,
+  });
+  const getArticlesResponse: GetArticlesResponse = await getArticlesPromise;
+
+  return getArticlesResponse;
 }
 
-export default function ArticlePreviews(props: ArticlePreviewProps) {
-  return (
-    <>
-      <div className="article-preview">
-        <div className="article-meta">
-          <a href="/profile/eric-simons"><img src="http://i.imgur.com/Qr71crq.jpg" /></a>
-          <div className="info">
-            <a href="/profile/eric-simons" className="author">Eric Simons</a>
-            <span className="date">January 20th</span>
-          </div>
-          <button className="btn btn-outline-primary btn-sm pull-xs-right">
-            <i className="ion-heart"></i> 29
-          </button>
-        </div>
-        <a href="/article/how-to-build-webapps-that-scale" className="preview-link">
-          <h1>How to build webapps that scale</h1>
-          <p>This is the description for the post.</p>
-          <span>Read more...</span>
-          <ul className="tag-list">
-            <li className="tag-default tag-pill tag-outline">realworld</li>
-            <li className="tag-default tag-pill tag-outline">implementations</li>
-          </ul>
-        </a>
-      </div>
+export default async function ArticlePreviews() {
+  const articlesResponse = await getArticles();
 
-      <div className="article-preview">
-        <div className="article-meta">
-          <a href="/profile/albert-pai"><img src="http://i.imgur.com/N4VcUeJ.jpg" /></a>
-          <div className="info">
-            <a href="/profile/albert-pai" className="author">Albert Pai</a>
-            <span className="date">January 20th</span>
-          </div>
-          <button className="btn btn-outline-primary btn-sm pull-xs-right">
-            <i className="ion-heart"></i> 32
-          </button>
-        </div>
-        <a href="/article/the-song-you" className="preview-link">
-          <h1>The song you won&apos;t ever stop singing. No matter how hard you try.</h1>
-          <p>This is the description for the post.</p>
-          <span>Read more...</span>
-          <ul className="tag-list">
-            <li className="tag-default tag-pill tag-outline">realworld</li>
-            <li className="tag-default tag-pill tag-outline">implementations</li>
-          </ul>
-        </a>
-      </div>
-    </>
-  );
+  if ('articles' in articlesResponse) {
+    const { articles } = articlesResponse;
+
+    return articles.map(article => (
+      <ArticlePreview article={article} key={article.slug} />
+    ));
+  } else {
+    // TODO: Handle it later.
+    throw new Error(articlesResponse.errors.toString());
+  }
+  
 }
