@@ -23,10 +23,12 @@ const tabs = [
 export default function MainPageTabs() {
   const selectedTag = useAppStore(state => state.selectedTag);
   const resetTag = useAppStore(state => state.resetTag);
+  const setPageNumber = useAppStore(store => store.setPageNum);
+
   const hasAuthToken = useHasAuthToken();
 
   const initialSelectedTab = tabs[hasAuthToken ? 0 : 1];
-  
+
   const [selectedTab, setSelectedTab] = useState(initialSelectedTab.linkName);
   const [tagTab, setTagTab] = useState<ReactElement>();
 
@@ -35,24 +37,25 @@ export default function MainPageTabs() {
 
     if (selectedTag && linkName !== selectedTag) {
       resetTag();
-    } 
-    
+    }
+
+    setPageNumber(0);
     setSelectedTab(linkName);
   };
 
   useEffect(() => {
     let newTagTab: typeof tagTab = undefined;
-    
+
     if (selectedTag) {
       newTagTab = (
-        <Tab 
+        <Tab
           key={selectedTag}
-          linkName={selectedTag} 
-          label={selectedTag} 
+          linkName={selectedTag}
+          label={selectedTag}
           hideIfNoAuthToken={false}
-          hasAuthToken={hasAuthToken} 
+          hasAuthToken={hasAuthToken}
           isActive
-          onTabClick={onTabChange}          
+          onTabClick={onTabChange}
         />
       );
 

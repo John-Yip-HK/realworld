@@ -5,21 +5,32 @@ import { useEffect, useState } from 'react';
 import { getJsonFetch } from '@/app/lib/api/customFetch';
 import { useAppStore } from '@/app/lib/store/useAppStore';
 import { useHasAuthToken } from '@/app/lib/hooks/useHasAuthToken';
+import { ARTICLES_PER_PAGE } from '@/app/lib/constants';
 
 import ArticlePreview from './components/ArticlePreview';
 
 export default function ArticlePreviews() {
   const selectedTag = useAppStore(store => store.selectedTag);
   const setNumArticles = useAppStore(store => store.setNumArticles);
+  const pageNumber = useAppStore(store => store.pageNum);
+
   const hasAuthToken = useHasAuthToken();
-  
+
   const [articles, setArticles] = useState<Article[]>();
   const [getArticlesError, setGetArticlesError] = useState<GetArticlesErrorResponse['errors']>()
 
   useEffect(() => {
     async function getArticles(selectedTag?: string) {
-      const fetchUrl = `/api/articles${selectedTag !== undefined ? `?tag=${selectedTag}` : ''}`
-      
+      const searchParams = new URLSearchParams();
+      searchParams.set('limit', `${ARTICLES_PER_PAGE}`);
+      searchParams.set('offset', `${pageNumber * ARTICLES_PER_PAGE}`);
+
+      if (selectedTag !== undefined) {
+        searchParams.set('tag', selectedTag);
+      }
+
+      const fetchUrl = `/api/articles${searchParams.size > 0 ? `?${searchParams.toString()}` : ''}`
+
       // TODO: Dynamically change URL hostname in different environments.
       const getArticlesPromise = getJsonFetch(fetchUrl, {
         loggedIn: false,
@@ -35,7 +46,7 @@ export default function ArticlePreviews() {
         }
       }
     }
-    
+
     let ignore = false;
 
     setNumArticles(0);
@@ -48,7 +59,7 @@ export default function ArticlePreviews() {
       ignore = true;
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedTag]);
+  }, [selectedTag, pageNumber]);
 
   if (getArticlesError) {
     // TODO: Handle it later.
@@ -56,7 +67,7 @@ export default function ArticlePreviews() {
   }
   else {
     return articles?.map(article => (
-      <ArticlePreview 
+      <ArticlePreview
         key={article.slug}
         article={article}
         isLoggedIn={hasAuthToken}

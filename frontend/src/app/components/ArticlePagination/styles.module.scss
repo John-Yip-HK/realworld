@@ -1,0 +1,9 @@
+.pagination {
+  &--hidden {
+    display: none;
+  }
+}
+
+.page-link {
+  cursor: pointer;
+}

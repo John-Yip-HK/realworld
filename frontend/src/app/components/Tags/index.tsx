@@ -17,12 +17,15 @@ const pointerStyle = styles['tag--cursor'];
 export default function Tags() {
   const [tagListContent, setTagListContent] = useState<ReactNode>('Loading Tags...');
   const setTag = useAppStore(state => state.setTag);
+  const setPageNumber = useAppStore(store => store.setPageNum);
 
   const onClickTag: (tag: string) => MouseEventHandler<HTMLAnchorElement> = (tag: string) => (event) => {
     event.preventDefault();
+
     setTag(tag);
+    setPageNumber(0);
   };
-  
+
   useEffect(() => {
     getJsonFetch('/api/tags', {
       loggedIn: false,
@@ -33,19 +36,19 @@ export default function Tags() {
           const tagsAnchors = tags.map((tag) => (
             <a
               key={tag}
-              onClick={onClickTag(tag)} 
-              className={`tag-pill tag-default ${pointerStyle}`} 
+              onClick={onClickTag(tag)}
+              className={`tag-pill tag-default ${pointerStyle}`}
             >
               {tag}
             </a>
           ));
-          
+
           setTagListContent(tagsAnchors);
         }
       });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  
+
   return (
     <div className="sidebar">
       <p>Popular Tags</p>
