@@ -3,6 +3,7 @@
 import { useState, type MouseEventHandler, type ReactElement, useEffect } from 'react';
 
 import { useAppStore } from '@/app/lib/store/useAppStore';
+import { useHasAuthToken } from '@/app/lib/hooks/useHasAuthToken';
 
 import Tab from './components/Tab';
 
@@ -22,7 +23,7 @@ const tabs = [
 export default function MainPageTabs() {
   const selectedTag = useAppStore(state => state.selectedTag);
   const resetTag = useAppStore(state => state.resetTag);
-  const hasAuthToken = useAppStore(state => state.authToken) !== undefined;
+  const hasAuthToken = useHasAuthToken();
 
   const initialSelectedTab = tabs[hasAuthToken ? 0 : 1];
   

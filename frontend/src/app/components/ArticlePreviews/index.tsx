@@ -1,28 +1,70 @@
-import { getJsonFetch } from "@/app/lib/api/customFetch";
-import ArticlePreview from "./components/ArticlePreview";
+'use client';
 
-async function getArticles() {
-  // TODO: Dynamically change URL hostname in different NODE_ENV values.
-  const getArticlesPromise = getJsonFetch('http://localhost:3000/api/articles', {
-    loggedIn: false,
-  });
-  const getArticlesResponse: GetArticlesResponse = await getArticlesPromise;
+import { useEffect, useState } from 'react';
 
-  return getArticlesResponse;
-}
+import { getJsonFetch } from '@/app/lib/api/customFetch';
+import { useAppStore } from '@/app/lib/store/useAppStore';
+import { useHasAuthToken } from '@/app/lib/hooks/useHasAuthToken';
 
-export default async function ArticlePreviews() {
-  const articlesResponse = await getArticles();
+import ArticlePreview from './components/ArticlePreview';
 
-  if ('articles' in articlesResponse) {
-    const { articles } = articlesResponse;
-
-    return articles.map(article => (
-      <ArticlePreview article={article} key={article.slug} />
-    ));
-  } else {
-    // TODO: Handle it later.
-    throw new Error(articlesResponse.errors.toString());
-  }
+export default function ArticlePreviews() {
+  const selectedTag = useAppStore(store => store.selectedTag);
+  const setNumArticles = useAppStore(store => store.setNumArticles);
+  const hasAuthToken = useHasAuthToken();
   
+  const [articles, setArticles] = useState<Article[]>();
+  const [getArticlesError, setGetArticlesError] = useState<GetArticlesErrorResponse['errors']>()
+
+  useEffect(() => {
+    async function getArticles(selectedTag?: string) {
+      const fetchUrl = `/api/articles${selectedTag !== undefined ? `?tag=${selectedTag}` : ''}`
+      
+      // TODO: Dynamically change URL hostname in different environments.
+      const getArticlesPromise = getJsonFetch(fetchUrl, {
+        loggedIn: false,
+      });
+      const getArticlesResponse: GetArticlesResponse = await getArticlesPromise;
+
+      if (!ignore) {
+        if ('errors' in getArticlesResponse) {
+          setGetArticlesError(getArticlesResponse.errors);
+        } else {
+          setNumArticles(getArticlesResponse.articlesCount);
+          setArticles(getArticlesResponse.articles);
+        }
+      }
+    }
+    
+    let ignore = false;
+
+    setNumArticles(0);
+    setArticles(undefined);
+    setGetArticlesError(undefined);
+
+    getArticles(selectedTag);
+
+    return () => {
+      ignore = true;
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTag]);
+
+  if (getArticlesError) {
+    // TODO: Handle it later.
+    throw new Error(getArticlesError.toString());
+  }
+  else {
+    return articles?.map(article => (
+      <ArticlePreview 
+        key={article.slug}
+        article={article}
+        isLoggedIn={hasAuthToken}
+      />
+    )) ?? (
+      <div className="article-preview">
+          <p>Loading articles...</p>
+      </div>
+    );
+  }
 }

@@ -1,11 +1,16 @@
-import React from 'react'
+import { type MouseEventHandler } from 'react';
+
+import { useRouter } from 'next/navigation';
+
+import { SIGN_UP_PATH } from '@/app/lib/constants';
 
 interface ArticlePreviewProps {
   article: Article;
+  isLoggedIn: boolean;
 }
 
 export default function ArticlePreview({
-  article
+  article, isLoggedIn
 }: ArticlePreviewProps) {
   const {
     slug,
@@ -17,8 +22,9 @@ export default function ArticlePreview({
     author: {
       username,
       image,
-    }
+    },
   } = article;
+  const router = useRouter();
 
   const profileLink = `/profile/${username.toLocaleLowerCase().replaceAll(' ', '-')}`;
 
@@ -35,16 +41,26 @@ export default function ArticlePreview({
       {tag}
     </li>
   ));
+
+  const handleClickLikeBtn: MouseEventHandler<HTMLButtonElement> = () => {
+    if (isLoggedIn) {
+      // TODO: Handle this logic later.
+    } else {
+      router.push(SIGN_UP_PATH);
+    }
+  }
   
   return (
     <div className="article-preview">
       <div className="article-meta">
-        <a href={profileLink}><img src={image} /></a>
+        <a href={profileLink}>
+          <img src={image} />
+        </a>
         <div className="info">
           <a href={profileLink} className="author">{username}</a>
           <span className="date">{localeDate}</span>
         </div>
-        <button className="btn btn-outline-primary btn-sm pull-xs-right">{favoritesCount}
+        <button className="btn btn-outline-primary btn-sm pull-xs-right" onClick={handleClickLikeBtn}>{favoritesCount}
         </button>
       </div>
       <a href={articleLink} className="preview-link">

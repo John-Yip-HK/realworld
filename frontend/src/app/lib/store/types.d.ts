@@ -10,3 +10,10 @@ interface TagSlice {
   setTag: (tag: string) => void;
   resetTag: () => void;
 }
+
+interface ArticleSlice {
+  numArticles: number;
+  setNumArticles: (numArticles: number) => void;
+}
+
+type AppStore = AuthSlice & TagSlice & ArticleSlice;
