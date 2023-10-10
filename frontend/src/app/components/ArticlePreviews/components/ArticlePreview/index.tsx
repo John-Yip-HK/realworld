@@ -60,7 +60,7 @@ export default function ArticlePreview({
           <a href={profileLink} className="author">{username}</a>
           <span className="date">{localeDate}</span>
         </div>
-        <button className="btn btn-outline-primary btn-sm pull-xs-right" onClick={handleClickLikeBtn}>{favoritesCount}
+        <button className="btn btn-outline-primary btn-sm pull-xs-right" onClick={handleClickLikeBtn}>❤️&nbsp;{favoritesCount}
         </button>
       </div>
       <a href={articleLink} className="preview-link">

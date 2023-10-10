@@ -11,13 +11,18 @@ import ArticlePreview from './components/ArticlePreview';
 
 export default function ArticlePreviews() {
   const selectedTag = useAppStore(store => store.selectedTag);
-  const setNumArticles = useAppStore(store => store.setNumArticles);
+
   const pageNumber = useAppStore(store => store.pageNum);
+
+  const setNumArticles = useAppStore(store => store.setNumArticles);
+  const articles = useAppStore(store => store.articles);
+  const setArticles = useAppStore(store => store.setArticles);
 
   const hasAuthToken = useHasAuthToken();
 
-  const [articles, setArticles] = useState<Article[]>();
-  const [getArticlesError, setGetArticlesError] = useState<GetArticlesErrorResponse['errors']>()
+  const [getArticlesError, setGetArticlesError] = useState<GetArticlesErrorResponse['errors']>();
+
+  const [loadingArticles, setLoadingArticles] = useState(false);
 
   useEffect(() => {
     async function getArticles(selectedTag?: string) {
@@ -29,9 +34,11 @@ export default function ArticlePreviews() {
         searchParams.set('tag', selectedTag);
       }
 
-      const fetchUrl = `/api/articles${searchParams.size > 0 ? `?${searchParams.toString()}` : ''}`
-
       // TODO: Dynamically change URL hostname in different environments.
+      const fetchUrl = `/api/articles${searchParams.size > 0 ? `?${searchParams.toString()}` : ''}`;
+
+      setLoadingArticles(true);
+      
       const getArticlesPromise = getJsonFetch(fetchUrl, {
         loggedIn: false,
       });
@@ -40,19 +47,19 @@ export default function ArticlePreviews() {
       if (!ignore) {
         if ('errors' in getArticlesResponse) {
           setGetArticlesError(getArticlesResponse.errors);
+          setNumArticles(0);
         } else {
           setNumArticles(getArticlesResponse.articlesCount);
           setArticles(getArticlesResponse.articles);
         }
       }
+
+      setLoadingArticles(false);
     }
-
+    
     let ignore = false;
-
-    setNumArticles(0);
-    setArticles(undefined);
     setGetArticlesError(undefined);
-
+    
     getArticles(selectedTag);
 
     return () => {
@@ -61,21 +68,35 @@ export default function ArticlePreviews() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTag, pageNumber]);
 
+  useEffect(() => {
+    setArticles([]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTag]);
+
   if (getArticlesError) {
     // TODO: Handle it later.
     throw new Error(getArticlesError.toString());
   }
   else {
-    return articles?.map(article => (
-      <ArticlePreview
-        key={article.slug}
-        article={article}
-        isLoggedIn={hasAuthToken}
-      />
-    )) ?? (
-      <div className="article-preview">
+    return (
+      <>
+      {
+        articles?.map(article => (
+          <ArticlePreview
+            key={article.slug}
+            article={article}
+            isLoggedIn={hasAuthToken}
+          />
+        )) 
+      }
+      {
+        loadingArticles ? 
+        <div className="article-preview">
           <p>Loading articles...</p>
-      </div>
+        </div> : 
+        null
+      }
+      </>
     );
   }
 }

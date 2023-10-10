@@ -1,3 +1,11 @@
 .tag--cursor {
   cursor: pointer;
+
+  &:hover, &:focus {
+    background-color: #687077;
+  }
+
+  &:focus {
+    text-decoration: underline !important;
+  }
 }

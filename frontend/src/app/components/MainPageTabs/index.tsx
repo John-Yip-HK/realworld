@@ -24,6 +24,7 @@ export default function MainPageTabs() {
   const selectedTag = useAppStore(state => state.selectedTag);
   const resetTag = useAppStore(state => state.resetTag);
   const setPageNumber = useAppStore(store => store.setPageNum);
+  const setNumArticles = useAppStore(store => store.setNumArticles);
 
   const hasAuthToken = useHasAuthToken();
 
@@ -40,6 +41,7 @@ export default function MainPageTabs() {
     }
 
     setPageNumber(0);
+    setNumArticles(0);
     setSelectedTab(linkName);
   };
 

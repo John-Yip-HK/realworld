@@ -1,4 +1,4 @@
-import { type MouseEventHandler } from 'react';
+import { useRef, type KeyboardEventHandler, type MouseEventHandler } from 'react';
 import { clsx } from 'clsx';
 
 import styles from './styles.module.scss';
@@ -13,7 +13,7 @@ type TabProps = {
 }
 
 const tabLinkCls = styles['nav-link'];
-const hideTabCls = styles['nav-item__hidden'];
+const hideTabCls = styles['nav-item--hidden'];
 
 export default function Tab({
   linkName,
@@ -30,10 +30,27 @@ export default function Tab({
       active: isActive,
     }
   );
+  const anchorRef = useRef<HTMLAnchorElement>(null);
+
+  const onFocusKeyDown: KeyboardEventHandler<HTMLLIElement> = (event) => {
+    if (event.code === 'Enter') {
+      anchorRef.current?.click();
+    }
+  };
   
   return (
-    <li className={clsx('nav-item', !hasAuthToken && hideIfNoAuthToken ? hideTabCls : undefined)}>
-      <a className={navLinkCls} onClick={onTabClick(linkName)}>{label}</a>
+    <li
+      tabIndex={0}
+      onKeyDown={onFocusKeyDown}
+      className={clsx('nav-item', !hasAuthToken && hideIfNoAuthToken ? hideTabCls : undefined)}
+    >
+      <a 
+        ref={anchorRef} 
+        className={navLinkCls} 
+        onClick={onTabClick(linkName)}
+      >
+        {label}
+      </a>
     </li>
   )
 }

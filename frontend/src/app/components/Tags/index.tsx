@@ -3,6 +3,7 @@
 import {
   type MouseEventHandler,
   type ReactNode,
+  type KeyboardEventHandler,
   useEffect,
   useState,
 } from 'react';
@@ -18,12 +19,21 @@ export default function Tags() {
   const [tagListContent, setTagListContent] = useState<ReactNode>('Loading Tags...');
   const setTag = useAppStore(state => state.setTag);
   const setPageNumber = useAppStore(store => store.setPageNum);
+  const setNumArticles = useAppStore(store => store.setNumArticles);
 
   const onClickTag: (tag: string) => MouseEventHandler<HTMLAnchorElement> = (tag: string) => (event) => {
     event.preventDefault();
 
     setTag(tag);
     setPageNumber(0);
+    setNumArticles(0);
+  };
+  const onEnterTag: (tag: string) => KeyboardEventHandler<HTMLAnchorElement> = (tag: string) => (event) => {
+    if (event.code === 'Enter') {
+      setTag(tag);
+      setPageNumber(0);
+      setNumArticles(0);
+    }
   };
 
   useEffect(() => {
@@ -35,8 +45,10 @@ export default function Tags() {
           const { tags } = getTagsResponse;
           const tagsAnchors = tags.map((tag) => (
             <a
+              tabIndex={0}
               key={tag}
               onClick={onClickTag(tag)}
+              onKeyDown={onEnterTag(tag)}
               className={`tag-pill tag-default ${pointerStyle}`}
             >
               {tag}
