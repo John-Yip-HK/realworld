@@ -35,12 +35,21 @@ export default function ArticlePreviews() {
       }
 
       // TODO: Dynamically change URL hostname in different environments.
-      const fetchUrl = `/api/articles${searchParams.size > 0 ? `?${searchParams.toString()}` : ''}`;
+      let fetchUrl = '/api/articles';
+
+      // TODO: Has auth token and selected tab is `your-feed`.
+      if (hasAuthToken) {
+        fetchUrl += '/feed';
+      }
+
+      if (searchParams.size > 0) {
+        fetchUrl += `?${searchParams.toString()}`;
+      }
 
       setLoadingArticles(true);
       
       const getArticlesPromise = getJsonFetch(fetchUrl, {
-        loggedIn: false,
+        loggedIn: hasAuthToken,
       });
       const getArticlesResponse: GetArticlesResponse = await getArticlesPromise;
 
