@@ -2,7 +2,6 @@
 
 import {
   type MouseEventHandler,
-  type ReactNode,
   type KeyboardEventHandler,
   useEffect,
   useState,
@@ -11,39 +10,71 @@ import {
 import { getJsonFetch } from '@/app/lib/api/customFetch';
 import { useAppStore } from '@/app/lib/store/useAppStore';
 
+import { TAGS_PATH } from '@/app/api/constants';
+
 import styles from './styles.module.scss';
 
 const pointerStyle = styles['tag--cursor'];
 
 export default function Tags() {
-  const [tagListContent, setTagListContent] = useState<ReactNode>('Loading Tags...');
-  const setTag = useAppStore(state => state.setTag);
+  const tags = useAppStore(state => state.tags);
+  const setTags = useAppStore(state => state.setTags);
+
+  const setSelectedTab = useAppStore(state => state.setSelectedTab);
   const setPageNumber = useAppStore(store => store.setPageNum);
   const setNumArticles = useAppStore(store => store.setNumArticles);
+
+  const [isLoadingTags, setIsLoadingTags] = useState(false);
 
   const onClickTag: (tag: string) => MouseEventHandler<HTMLAnchorElement> = (tag: string) => (event) => {
     event.preventDefault();
 
-    setTag(tag);
+    setSelectedTab(tag);
     setPageNumber(0);
     setNumArticles(0);
   };
   const onEnterTag: (tag: string) => KeyboardEventHandler<HTMLAnchorElement> = (tag: string) => (event) => {
     if (event.code === 'Enter') {
-      setTag(tag);
+      setSelectedTab(tag);
       setPageNumber(0);
       setNumArticles(0);
     }
   };
 
   useEffect(() => {
-    getJsonFetch('/api/tags', {
-      loggedIn: false,
-    })
-      .then((getTagsResponse: GetTagsResponse) => {
-        if ('tags' in getTagsResponse) {
-          const { tags } = getTagsResponse;
-          const tagsAnchors = tags.map((tag) => (
+    async function getTags() {
+      setIsLoadingTags(true);
+
+      const getTagsResponse: GetTagsResponse = await getJsonFetch(TAGS_PATH, {
+        loggedIn: false,
+        isClientFetch: true,
+      });
+
+      if ('tags' in getTagsResponse) {
+        const { tags } = getTagsResponse;
+        setTags(tags);
+      } else {
+        setTags([]);
+      }
+
+      setIsLoadingTags(false);
+    }
+
+    getTags();
+
+    return () => {
+      setTags([]);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <div className="sidebar">
+      <p>Popular Tags</p>
+
+      <div className="tag-list">
+        {
+          tags.map((tag) => (
             <a
               tabIndex={0}
               key={tag}
@@ -53,20 +84,13 @@ export default function Tags() {
             >
               {tag}
             </a>
-          ));
-
-          setTagListContent(tagsAnchors);
+          ))
         }
-      });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  return (
-    <div className="sidebar">
-      <p>Popular Tags</p>
-
-      <div className="tag-list">
-        {tagListContent}
+        {
+          isLoadingTags ?
+          <p>Loading Tags...</p> :
+          null
+        }
       </div>
     </div>
   )

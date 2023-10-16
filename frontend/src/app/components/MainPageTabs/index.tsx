@@ -6,39 +6,22 @@ import { useAppStore } from '@/app/lib/store/useAppStore';
 import { useHasAuthToken } from '@/app/lib/hooks/useHasAuthToken';
 
 import Tab from './components/Tab';
-
-const tabs = [
-  {
-    linkName: 'your-feed',
-    label: 'Your Feed',
-    hideIfNoAuthToken: true,
-  },
-  {
-    linkName: 'global-feed',
-    label: 'Global Feed',
-    hideIfNoAuthToken: false,
-  },
-];
+import { tabs } from './constants';
 
 export default function MainPageTabs() {
-  const selectedTag = useAppStore(state => state.selectedTag);
-  const resetTag = useAppStore(state => state.resetTag);
   const setPageNumber = useAppStore(store => store.setPageNum);
   const setNumArticles = useAppStore(store => store.setNumArticles);
 
   const hasAuthToken = useHasAuthToken();
 
-  const initialSelectedTab = tabs[hasAuthToken ? 0 : 1];
+  const tags = useAppStore(store => store.tags);
+  const selectedTab = useAppStore(store => store.selectedTab);
+  const setSelectedTab = useAppStore(store => store.setSelectedTab);
 
-  const [selectedTab, setSelectedTab] = useState(initialSelectedTab.linkName);
   const [tagTab, setTagTab] = useState<ReactElement>();
 
   const onTabChange = (linkName: string): MouseEventHandler<HTMLAnchorElement> => (event) => {
     event.preventDefault();
-
-    if (selectedTag && linkName !== selectedTag) {
-      resetTag();
-    }
 
     setPageNumber(0);
     setNumArticles(0);
@@ -46,27 +29,32 @@ export default function MainPageTabs() {
   };
 
   useEffect(() => {
+    const initialSelectedTab = tabs[hasAuthToken ? 0 : 1].linkName;
+    setSelectedTab(initialSelectedTab);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasAuthToken]);
+
+  useEffect(() => {
     let newTagTab: typeof tagTab = undefined;
 
-    if (selectedTag) {
+    if (tags.includes(selectedTab)) {
       newTagTab = (
         <Tab
-          key={selectedTag}
-          linkName={selectedTag}
-          label={selectedTag}
           hideIfNoAuthToken={false}
-          hasAuthToken={hasAuthToken}
           isActive
+          key={selectedTab}
+          linkName={selectedTab}
+          label={selectedTab}
           onTabClick={onTabChange}
         />
       );
 
-      setSelectedTab(selectedTag);
+      setSelectedTab(selectedTab);
     }
 
     setTagTab(newTagTab);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedTag, hasAuthToken]);
+  }, [selectedTab]);
 
   return (
   <div className="feed-toggle">

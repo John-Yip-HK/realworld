@@ -7,7 +7,7 @@ type TabProps = {
   linkName: string;
   label: string;
   hideIfNoAuthToken: boolean;
-  hasAuthToken: boolean;
+  hasAuthToken?: boolean;
   isActive: boolean;
   onTabClick: (linkName: string) => MouseEventHandler<HTMLAnchorElement>;
 }
@@ -25,7 +25,7 @@ export default function Tab({
 }: TabProps) {
   const navLinkCls = clsx(
     'nav-link',
-    tabLinkCls, 
+    tabLinkCls,
     {
       active: isActive,
     }
@@ -37,16 +37,16 @@ export default function Tab({
       anchorRef.current?.click();
     }
   };
-  
+
   return (
     <li
       tabIndex={0}
       onKeyDown={onFocusKeyDown}
       className={clsx('nav-item', !hasAuthToken && hideIfNoAuthToken ? hideTabCls : undefined)}
     >
-      <a 
-        ref={anchorRef} 
-        className={navLinkCls} 
+      <a
+        ref={anchorRef}
+        className={navLinkCls}
         onClick={onTabClick(linkName)}
       >
         {label}

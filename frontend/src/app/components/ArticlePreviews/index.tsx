@@ -11,10 +11,13 @@ import ArticlePreview from './components/ArticlePreview';
 import { ARTICLES_PER_PAGE } from '@/app/lib/constants';
 import { ARTICLES_FEED_PATH, ARTICLES_PATH } from '@/app/api/constants';
 
+import { YOUR_FEED_LINK_NAME } from '../MainPageTabs/constants';
+
 export default function ArticlePreviews() {
-  const selectedTag = useAppStore(store => store.selectedTag);
   const pageNumber = useAppStore(store => store.pageNum);
   const setNumArticles = useAppStore(store => store.setNumArticles);
+  const selectedTab = useAppStore(store => store.selectedTab);
+  const tags = useAppStore(store => store.tags);
 
   const hasAuthToken = useHasAuthToken();
 
@@ -24,16 +27,16 @@ export default function ArticlePreviews() {
   const [loadingArticles, setLoadingArticles] = useState(false);
 
   useEffect(() => {
-    async function getArticles(selectedTag?: string) {
+    async function getArticles(selectedTab: string) {
       const searchParams = new URLSearchParams();
       searchParams.set('limit', `${ARTICLES_PER_PAGE}`);
       searchParams.set('offset', `${pageNumber * ARTICLES_PER_PAGE}`);
 
-      if (selectedTag !== undefined) {
-        searchParams.set('tag', selectedTag);
+      if (tags.includes(selectedTab)) {
+        searchParams.set('tag', selectedTab);
       }
 
-      let fetchUrl = hasAuthToken ? ARTICLES_FEED_PATH : ARTICLES_PATH;
+      let fetchUrl = hasAuthToken && selectedTab === YOUR_FEED_LINK_NAME ? ARTICLES_FEED_PATH : ARTICLES_PATH;
 
       if (searchParams.size > 0) {
         fetchUrl += `?${searchParams.toString()}`;
@@ -41,11 +44,10 @@ export default function ArticlePreviews() {
 
       setLoadingArticles(true);
 
-      const getArticlesPromise = getJsonFetch(fetchUrl, {
+      const getArticlesResponse: GetArticlesResponse = await getJsonFetch(fetchUrl, {
         loggedIn: hasAuthToken,
         isClientFetch: true,
       });
-      const getArticlesResponse: GetArticlesResponse = await getArticlesPromise;
 
       if (!ignore) {
         if ('errors' in getArticlesResponse) {
@@ -63,18 +65,18 @@ export default function ArticlePreviews() {
     let ignore = false;
     setGetArticlesError(undefined);
 
-    getArticles(selectedTag);
+    getArticles(selectedTab);
 
     return () => {
       ignore = true;
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedTag, pageNumber]);
+  }, [selectedTab, pageNumber]);
 
   useEffect(() => {
     setArticles([]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedTag]);
+  }, [selectedTab]);
 
   if (getArticlesError) {
     // TODO: Handle it later.

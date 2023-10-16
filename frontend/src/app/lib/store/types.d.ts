@@ -6,11 +6,11 @@ interface AuthSlice {
 }
 
 interface TagSlice {
-  /** Assume it is a single English word. */
-  selectedTag?: string;
+  /** Assume it is an array of single-word English words. */
+  tags: string[];
 
-  setTag: (tag: string) => void;
-  resetTag: () => void;
+  setTags: (tags: string[]) => void;
+  resetTags: () => void;
 }
 
 interface ArticleSlice {
@@ -21,4 +21,11 @@ interface ArticleSlice {
   setPageNum: (pageNum: number) => void;
 }
 
-type AppStore = AuthSlice & TagSlice & ArticleSlice;
+interface MainPageTabSlice {
+  selectedTab: string;
+
+  setSelectedTab: (tab: string) => void;
+  resetSelectedTab: () => void;
+}
+
+type AppStore = AuthSlice & TagSlice & ArticleSlice & MainPageTabSlice;
