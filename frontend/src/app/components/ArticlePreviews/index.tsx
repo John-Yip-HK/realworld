@@ -3,23 +3,22 @@
 import { useEffect, useState } from 'react';
 
 import { getJsonFetch } from '@/app/lib/api/customFetch';
-import { useAppStore } from '@/app/lib/store/useAppStore';
 import { useHasAuthToken } from '@/app/lib/hooks/useHasAuthToken';
-import { ARTICLES_PER_PAGE } from '@/app/lib/constants';
+import { useAppStore } from '@/app/lib/store/useAppStore';
 
 import ArticlePreview from './components/ArticlePreview';
 
+import { ARTICLES_PER_PAGE } from '@/app/lib/constants';
+import { ARTICLES_FEED_PATH, ARTICLES_PATH } from '@/app/api/constants';
+
 export default function ArticlePreviews() {
   const selectedTag = useAppStore(store => store.selectedTag);
-
   const pageNumber = useAppStore(store => store.pageNum);
-
   const setNumArticles = useAppStore(store => store.setNumArticles);
-  const articles = useAppStore(store => store.articles);
-  const setArticles = useAppStore(store => store.setArticles);
 
   const hasAuthToken = useHasAuthToken();
 
+  const [articles, setArticles] = useState<Article[]>([])
   const [getArticlesError, setGetArticlesError] = useState<GetArticlesErrorResponse['errors']>();
 
   const [loadingArticles, setLoadingArticles] = useState(false);
@@ -34,29 +33,24 @@ export default function ArticlePreviews() {
         searchParams.set('tag', selectedTag);
       }
 
-      // TODO: Dynamically change URL hostname in different environments.
-      let fetchUrl = '/api/articles';
-
-      // TODO: Has auth token and selected tab is `your-feed`.
-      if (hasAuthToken) {
-        fetchUrl += '/feed';
-      }
+      let fetchUrl = hasAuthToken ? ARTICLES_FEED_PATH : ARTICLES_PATH;
 
       if (searchParams.size > 0) {
         fetchUrl += `?${searchParams.toString()}`;
       }
 
       setLoadingArticles(true);
-      
+
       const getArticlesPromise = getJsonFetch(fetchUrl, {
         loggedIn: hasAuthToken,
+        isClientFetch: true,
       });
       const getArticlesResponse: GetArticlesResponse = await getArticlesPromise;
 
       if (!ignore) {
         if ('errors' in getArticlesResponse) {
-          setGetArticlesError(getArticlesResponse.errors);
           setNumArticles(0);
+          setGetArticlesError(getArticlesResponse.errors);
         } else {
           setNumArticles(getArticlesResponse.articlesCount);
           setArticles(getArticlesResponse.articles);
@@ -65,10 +59,10 @@ export default function ArticlePreviews() {
 
       setLoadingArticles(false);
     }
-    
+
     let ignore = false;
     setGetArticlesError(undefined);
-    
+
     getArticles(selectedTag);
 
     return () => {
@@ -96,14 +90,20 @@ export default function ArticlePreviews() {
             article={article}
             isLoggedIn={hasAuthToken}
           />
-        )) 
+        ))
       }
       {
-        loadingArticles ? 
+        loadingArticles ?
         <div className="article-preview">
           <p>Loading articles...</p>
-        </div> : 
-        null
+        </div> :
+          (
+            articles.length === 0 ?
+            <div className="article-preview">
+              <p>No articles are here... yet.</p>
+            </div> :
+            null
+          )
       }
       </>
     );

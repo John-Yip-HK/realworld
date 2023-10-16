@@ -16,11 +16,9 @@ interface TagSlice {
 interface ArticleSlice {
   numArticles: number;
   pageNum: number;
-  articles: Article[];
 
   setNumArticles: (numArticles: number) => void;
   setPageNum: (pageNum: number) => void;
-  setArticles: (articles: Article[]) => void;
 }
 
 type AppStore = AuthSlice & TagSlice & ArticleSlice;

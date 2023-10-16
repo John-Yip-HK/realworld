@@ -1,9 +1,11 @@
-import { DEFAULT_HEADERS } from "@/app/api/constants";
 import { useAppStore } from "../store/useAppStore";
+
+import { DEFAULT_HEADERS } from "@/app/api/constants";
 
 export type FetchOptions = {
   method?: string;
   body?: object;
+  isClientFetch?: boolean;
   loggedIn?: boolean;
   headers?: RequestInit['headers'];
 };
@@ -40,17 +42,27 @@ export const customFetch = (url: string, options: FetchOptions = {
       if (authToken === null) {
         throw new Error('You are not logged in.');
       }
-      
+
       obj.headers = {
         ...obj.headers,
         'Authorization': `Bearer ${authToken}`,
       };
     }
   }
-  
+
   return fetch(url, obj);
 };
 
-export const getJsonFetch = (url: string, options: FetchOptions = {
+export const getJsonFetch = async (url: string, options: FetchOptions = {
   loggedIn: true,
-}) => customFetch(url, options).then(response => response.json());
+  isClientFetch: false,
+}) => {
+  let fetchUrl = url;
+
+  if (options.isClientFetch) {
+    fetchUrl = `/api${url.charAt(0) === '/' ? url : '/' + url}`;
+  }
+
+  const response = await customFetch(fetchUrl, options);
+  return await response.json();
+}

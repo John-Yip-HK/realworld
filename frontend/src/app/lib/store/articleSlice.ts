@@ -6,9 +6,7 @@ export const createArticleSlice: StateCreator<
   numArticles: 0,
   /** Zero-based current page number. */
   pageNum: 0,
-  articles: [],
 
   setNumArticles: (numArticles) => set(() => ({ numArticles, })),
   setPageNum: (pageNum) => set(() => ({ pageNum, })),
-  setArticles: (articles) => set(() => ({ articles, })),
 });
