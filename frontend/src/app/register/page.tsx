@@ -11,10 +11,10 @@ import { useRouter } from 'next/navigation';
 
 import { extractResponseInfo } from '../lib/api/handleResponse';
 import { handleError } from '../lib/api/handlerError';
-import { DUMMY_USER_OBJECT, JWT_TOKEN, UNKNOWN_ERROR_OBJECT } from '../constants/user';
+import { DUMMY_USER_OBJECT, UNKNOWN_ERROR_OBJECT } from '../constants/user';
 import { isAuthError } from '../lib/users/isAuthError';
 import { customFetch } from '../lib/api/customFetch';
-import { useAppStore } from '../lib/store/useAppStore';
+import { USERS_PATH } from '../api/constants';
 
 export default function SignUpPage() {
   const [username, setUsername] = useState('');
@@ -23,7 +23,6 @@ export default function SignUpPage() {
 
   const [formIsDisabled, setFormIsDisabled] = useState(false);
   const [errors, setErrors] = useState<AuthError>();
-  const setAuthToken = useAppStore(state => state.setAuthToken);
 
   const router = useRouter();
 
@@ -63,7 +62,7 @@ export default function SignUpPage() {
     };
 
     try {
-      const signUpNewUserResponse = await customFetch('/api/users', {
+      const signUpNewUserResponse = await customFetch('/api' + USERS_PATH, {
         method: 'POST',
         body: user,
         loggedIn: false,
@@ -76,11 +75,6 @@ export default function SignUpPage() {
           cause: (responseBody as AuthErrorResponse).errors,
         });
       }
-
-      const { user: signedUpUser } = responseBody as SuccessResponse;
-      const { token: authToken } = signedUpUser;
-
-      setAuthToken(authToken);
 
       router.push('/');
     } catch (error) {

@@ -14,13 +14,14 @@ type AuthError = Record<string, string[]>
 type AuthErrorResponse = {
   errors: AuthError;
 }
-type SuccessResponse = {
-  user: UserMetadata;
-}
 
 /* Sign up user types */
-type SignUpUserResponse = SuccessResponse | AuthErrorResponse;
+type SignInUserSuccessResponse = {
+  user: UserMetadata;
+}
+type SignUpUserResponse = SignInUserSuccessResponse | AuthErrorResponse;
 
 /* Log in user types */
+type LogInUserSuccessResponse = SignInUserSuccessResponse;
 type LogInCredentials = Pick<User, 'email' | 'password'>;
-type LogInUserResponse = SuccessResponse | AuthErrorResponse;
+type LogInUserResponse = LogInUserSuccessResponse | AuthErrorResponse;

@@ -15,6 +15,7 @@ import { isAuthError } from "../lib/users/isAuthError";
 import { JWT_TOKEN, UNKNOWN_ERROR_OBJECT } from "../constants/user";
 import { customFetch } from "../lib/api/customFetch";
 import { useAppStore } from "../lib/store/useAppStore";
+import { LOGIN_PATH } from "../api/constants";
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -42,7 +43,7 @@ export default function LoginPage() {
       }
 
       if (setter) {
-          setter(event.target.value);
+        setter(event.target.value);
       }
     };
 
@@ -57,7 +58,7 @@ export default function LoginPage() {
     }
 
     try {
-      const logInResponse = await customFetch('/api/users/login', {
+      const logInResponse = await customFetch('/api' + LOGIN_PATH, {
         method: 'POST',
         body: logInCredentials,
         loggedIn: false,
@@ -70,11 +71,6 @@ export default function LoginPage() {
           cause: (responseBody as AuthErrorResponse).errors,
         })
       }
-
-      const authToken = (responseBody as SuccessResponse).user.token;
-      
-      localStorage.setItem(JWT_TOKEN, authToken);
-      setAuthToken(authToken);
 
       router.push('/');
     } catch (error) {

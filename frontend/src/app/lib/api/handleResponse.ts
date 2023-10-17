@@ -1,18 +1,19 @@
 export async function extractResponseInfo<ResBody = unknown>(response: Response) {
   const { headers, ok, status, statusText } = response;
   let responseBody, error;
-  
+
   try {
-    responseBody = await response.json() satisfies ResBody;
-  } catch {
+    responseBody = await response.json() as ResBody;
+  } catch (err) {
     error = {
       status: "error",
-      message: statusText,
+      message: err,
     };
   }
 
   return {
-    responseBody: responseBody ?? error,
+    responseBody,
+    error,
     headers,
     ok,
     status,

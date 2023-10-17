@@ -6,6 +6,7 @@ export type FetchOptions = {
   method?: string;
   body?: object;
   isClientFetch?: boolean;
+  isServerFetch?: boolean;
   loggedIn?: boolean;
   headers?: RequestInit['headers'];
 };
@@ -61,6 +62,10 @@ export const getJsonFetch = async (url: string, options: FetchOptions = {
 
   if (options.isClientFetch) {
     fetchUrl = `/api${url.charAt(0) === '/' ? url : '/' + url}`;
+  }
+  else if (options.isServerFetch) {
+    // TODO: Change hostname according to environment
+    fetchUrl = `http://localhost:3000/api${url.charAt(0) === '/' ? url : '/' + url}`;
   }
 
   const response = await customFetch(fetchUrl, options);
