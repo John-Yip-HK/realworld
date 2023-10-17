@@ -31,21 +31,25 @@ export default function UserNavLink({
     }
   }, [isAuthenticated]);
 
-  return (
-    <NavLink
-      key='/profile'
-      link={{
-        href: '/profile',
-        children: (
-          <>
-            <img alt={username !== '' ? `Image of ${username}` : 'Empty user image'} src={imageUrl} className='user-pic' />
-            {username}
-          </>
-        ),
-        protectedLink: true
-      }}
-      isActive={false}
-      className={anchorClassName}
-    />
-  )
+  if (isAuthenticated) {
+    return (
+      <NavLink
+        key='/profile'
+        link={{
+          href: '/profile',
+          children: (
+            <>
+              <img alt={username !== '' ? `Image of ${username}` : 'Empty user image'} src={imageUrl} className='user-pic' />
+              {username}
+            </>
+          ),
+          protectedLink: true
+        }}
+        isActive={false}
+        className={anchorClassName}
+      />
+    )
+  } else {
+    return null;
+  }
 }

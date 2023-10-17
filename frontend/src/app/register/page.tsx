@@ -1,92 +1,49 @@
-'use client'
+import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 
-import {
-  type InputHTMLAttributes,
-  useState,
-  type Dispatch,
-  type SetStateAction,
-  type FormEventHandler,
-} from 'react';
-import { useRouter } from 'next/navigation';
+import { getApiPath } from '../api/utils';
 
-import { extractResponseInfo } from '../lib/api/handleResponse';
-import { handleError } from '../lib/api/handlerError';
-import { DUMMY_USER_OBJECT, UNKNOWN_ERROR_OBJECT } from '../constants/user';
-import { isAuthError } from '../lib/users/isAuthError';
-import { customFetch } from '../lib/api/customFetch';
-import { USERS_PATH } from '../api/constants';
+import { getJsonFetch } from '../lib/api/customFetch';
+import { TOKEN_COOKIE_NAME, USERS_PATH } from '../api/constants';
+
+import SignUpForm from './components/SignUpForm';
 
 export default function SignUpPage() {
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  async function signUpNewUser(_: any, formData: FormData) {
+    'use server';
 
-  const [formIsDisabled, setFormIsDisabled] = useState(false);
-  const [errors, setErrors] = useState<AuthError>();
+    const newUser = {
+      username: formData.get('username')!,
+      email: formData.get('email')!,
+      password: formData.get('password')!,
+    } as User;
 
-  const router = useRouter();
+    const signUpUserResponse: SignUpUserResponse = await getJsonFetch(getApiPath(USERS_PATH), {
+      method: 'POST',
+      body: {
+        user: newUser,
+      },
 
-  const onValueChange: InputHTMLAttributes<HTMLInputElement>['onChange'] =
-    (event) => {
-      let setter: Dispatch<SetStateAction<string>> | undefined;
+      // TODO: This flag will be removed.
+      loggedIn: false,
+    });
 
-      switch(event.target.name) {
-        case 'username':
-          setter = setUsername;
-          break;
-        case 'email':
-          setter = setEmail;
-          break;
-        case 'password':
-          setter = setPassword;
-          break;
-        default:
-          break;
+    if ('errors' in signUpUserResponse) {
+      const { errors } = signUpUserResponse;
+
+      return {
+        errors,
       }
-
-      if (setter) {
-          setter(event.target.value);
-      }
-    };
-
-  const signUpNewUser: FormEventHandler<HTMLFormElement> = async (event) => {
-    event.preventDefault();
-
-    setFormIsDisabled(true);
-    setErrors(undefined);
-
-    const user: User = {
-      username,
-      email,
-      password,
-    };
-
-    try {
-      const signUpNewUserResponse = await customFetch('/api' + USERS_PATH, {
-        method: 'POST',
-        body: user,
-        loggedIn: false,
+    } else {
+      cookies().set(TOKEN_COOKIE_NAME, signUpUserResponse.user.token, {
+        sameSite: 'strict',
+        secure: true,
+        httpOnly: true,
       });
 
-      const { responseBody, ok, statusText } = await extractResponseInfo<SignUpUserResponse>(signUpNewUserResponse);
-
-      if (!ok) {
-        throw new Error(statusText, {
-          cause: (responseBody as AuthErrorResponse).errors,
-        });
-      }
-
-      router.push('/');
-    } catch (error) {
-      handleError(error, (error) => {
-        if (isAuthError(error.cause)) {
-          setErrors(error.cause as AuthError);
-        } else {
-          setErrors(UNKNOWN_ERROR_OBJECT);
-        }
-      });
-    } finally {
-      setFormIsDisabled(false);
+      revalidatePath('/');
+      redirect('/');
     }
   }
 
@@ -99,42 +56,7 @@ export default function SignUpPage() {
             <p className="text-xs-center">
               <a href="/login">Have an account?</a>
             </p>
-
-            {
-              errors
-              ? (
-                <ul className="error-messages">
-                  {
-                    Object.entries(errors).map(([fieldName, errorArray]) => {
-                      return errorArray.map((error) => {
-                        const itemValue = `${fieldName} ${error}`;
-                        const isFieldNameUserKey = Object.keys(DUMMY_USER_OBJECT).includes(fieldName);
-
-                        return (
-                          <li key={itemValue}>{`${isFieldNameUserKey ? 'That ' : ''}${fieldName} ${error}`}</li>
-                        );
-                      });
-                    })
-                  }
-                </ul>
-              )
-              : null
-            }
-
-            <form onSubmit={signUpNewUser}>
-              <fieldset disabled={formIsDisabled}>
-                <fieldset className="form-group">
-                  <input className="form-control form-control-lg" type="text" placeholder="Username" name="username" value={username} onChange={onValueChange} />
-                </fieldset>
-                <fieldset className="form-group">
-                  <input className="form-control form-control-lg" type="email" placeholder="Email" name="email" value={email} onChange={onValueChange} />
-                </fieldset>
-                <fieldset className="form-group">
-                  <input className="form-control form-control-lg" type="password" placeholder="Password" name="password" value={password} onChange={onValueChange} />
-                </fieldset>
-                <button className="btn btn-lg btn-primary pull-xs-right" type="submit">Sign up</button>
-              </fieldset>
-            </form>
+            <SignUpForm createNewUser={signUpNewUser} />
           </div>
         </div>
       </div>

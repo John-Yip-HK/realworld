@@ -1,6 +1,6 @@
-import { cookies } from 'next/headers'
+import { cookies } from 'next/headers';
 
-const TOKEN_COOKIE_NAME = 'token';
+import { TOKEN_COOKIE_NAME } from '../constants';
 
 export function createSetCookieHeader(token: string) {
   return {

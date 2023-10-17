@@ -56,7 +56,6 @@ export const customFetch = (url: string, options: FetchOptions = {
 
 export const getJsonFetch = async (url: string, options: FetchOptions = {
   loggedIn: true,
-  isClientFetch: false,
 }) => {
   let fetchUrl = url;
 
