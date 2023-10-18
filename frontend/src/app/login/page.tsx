@@ -1,91 +1,11 @@
 'use client';
 
-import {
-  type Dispatch,
-  type InputHTMLAttributes,
-  type SetStateAction,
-  type FormEventHandler,
-  useState,
-} from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 
-import { extractResponseInfo } from "../lib/api/handleResponse";
-import { handleError } from "../lib/api/handlerError";
-import { isAuthError } from "../lib/users/isAuthError";
-import { JWT_TOKEN, UNKNOWN_ERROR_OBJECT } from "../constants/user";
-import { customFetch } from "../lib/api/customFetch";
-import { useAppStore } from "../lib/store/useAppStore";
-import { LOGIN_PATH } from "../api/constants";
+import LogInFormContainer from "./components/LogInFormContainer";
+import { loginServerAction } from "../lib/server-actions/auth";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const [errors, setErrors] = useState<AuthError>();
-  const setAuthToken = useAppStore(state => state.setAuthToken);
-
-  const router = useRouter();
-
-  const onValueChange: InputHTMLAttributes<HTMLInputElement>['onChange'] =
-    (event) => {
-      let setter: Dispatch<SetStateAction<string>> | undefined;
-
-      switch(event.target.name) {
-        case 'email':
-          setter = setEmail;
-          break;
-        case 'password':
-          setter = setPassword;
-          break;
-        default:
-          break;
-      }
-
-      if (setter) {
-        setter(event.target.value);
-      }
-    };
-
-  const logInUser: FormEventHandler<HTMLFormElement> = async (event) => {
-    event.preventDefault();
-
-    setIsLoggingIn(true);
-    setErrors(undefined);
-
-    const logInCredentials: LogInCredentials = {
-      email, password,
-    }
-
-    try {
-      const logInResponse = await customFetch('/api' + LOGIN_PATH, {
-        method: 'POST',
-        body: logInCredentials,
-        loggedIn: false,
-      });
-
-      const { responseBody, ok, statusText } = await extractResponseInfo<LogInUserResponse>(logInResponse);
-
-      if (!ok) {
-        throw new Error(statusText, {
-          cause: (responseBody as AuthErrorResponse).errors,
-        })
-      }
-
-      router.push('/');
-    } catch (error) {
-      handleError(error, (error) => {
-        if (isAuthError(error.cause)) {
-          setErrors(error.cause as AuthError);
-        } else {
-          setErrors(UNKNOWN_ERROR_OBJECT);
-        }
-      });
-    }finally {
-      setIsLoggingIn(false);
-    }
-  }
-
   return (
     <div className="auth-page">
       <div className="container page">
@@ -93,40 +13,9 @@ export default function LoginPage() {
           <div className="col-md-6 offset-md-3 col-xs-12">
             <h1 className="text-xs-center">Sign in</h1>
             <p className="text-xs-center">
-              <a href="/register">Need an account?</a>
+              <Link href="/register">Need an account?</Link>
             </p>
-
-            {
-              errors
-              ? (
-                <ul className="error-messages">
-                  {
-                    Object.entries(errors).map(([fieldName, errorArray]) => {
-                      return errorArray.map((error) => {
-                        const itemValue = `${fieldName} ${error}`;
-
-                        return (
-                          <li key={itemValue}>{itemValue}</li>
-                        );
-                      });
-                    })
-                  }
-                </ul>
-              )
-              : null
-            }
-
-            <form onSubmit={logInUser}>
-              <fieldset disabled={isLoggingIn}>
-                <fieldset className="form-group">
-                  <input className="form-control form-control-lg" type="email" name="email" placeholder="Email" value={email} onChange={onValueChange} />
-                </fieldset>
-                <fieldset className="form-group">
-                  <input className="form-control form-control-lg" type="password" name="password" placeholder="Password" value={password} onChange={onValueChange} />
-                </fieldset>
-                <button className="btn btn-lg btn-primary pull-xs-right" type="submit">Sign in</button>
-              </fieldset>
-            </form>
+            <LogInFormContainer formServerAction={loginServerAction} />
           </div>
         </div>
       </div>

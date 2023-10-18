@@ -1,8 +1,12 @@
+type CredentialType = ReturnType<FormData['get']>;
+
 interface User {
   username: string;
   email: string;
   password: string;
 }
+
+type NewUserCredentials = Record<keyof User, CredentialType>;
 
 type UserMetadata = Pick<User, 'username' | 'email'> & {
   token: string;
@@ -23,5 +27,5 @@ type SignUpUserResponse = SignInUserSuccessResponse | AuthErrorResponse;
 
 /* Log in user types */
 type LogInUserSuccessResponse = SignInUserSuccessResponse;
-type LogInCredentials = Pick<User, 'email' | 'password'>;
+type LogInCredentials = Record<'email' | 'password', CredentialType>;
 type LogInUserResponse = LogInUserSuccessResponse | AuthErrorResponse;

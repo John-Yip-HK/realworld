@@ -9,5 +9,3 @@ export const DEFAULT_HEADERS: HeadersInit = {
   'accept': 'application/json',
   'Content-Type': 'application/json',
 };
-
-export const TOKEN_COOKIE_NAME = 'token';
