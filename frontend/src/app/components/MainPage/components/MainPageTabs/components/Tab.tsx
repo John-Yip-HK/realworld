@@ -1,31 +1,23 @@
 import { useRef, type KeyboardEventHandler, type MouseEventHandler } from 'react';
 import { clsx } from 'clsx';
 
-import styles from './styles.module.scss';
+import './styles.scss';
 
 type TabProps = {
-  linkName: string;
-  label: string;
-  hideIfNoAuthToken: boolean;
-  hasAuthToken?: boolean;
   isActive: boolean;
+  label: string;
+  linkName: string;
   onTabClick: (linkName: string) => MouseEventHandler<HTMLAnchorElement>;
 }
-
-const tabLinkCls = styles['nav-link'];
-const hideTabCls = styles['nav-item--hidden'];
 
 export default function Tab({
   linkName,
   label,
-  hideIfNoAuthToken,
-  hasAuthToken,
   isActive,
   onTabClick,
 }: TabProps) {
   const navLinkCls = clsx(
     'nav-link',
-    tabLinkCls,
     {
       active: isActive,
     }
@@ -42,7 +34,7 @@ export default function Tab({
     <li
       tabIndex={0}
       onKeyDown={onFocusKeyDown}
-      className={clsx('nav-item', !hasAuthToken && hideIfNoAuthToken ? hideTabCls : undefined)}
+      className="nav-item"
     >
       <a
         ref={anchorRef}

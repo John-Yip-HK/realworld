@@ -19,6 +19,7 @@
     "react": "experimental",
     "react-dom": "experimental",
     "sass": "^1.68.0",
+    "swr": "^2.2.4",
     "typescript": "5.2.2",
     "zustand": "^4.4.1"
   }

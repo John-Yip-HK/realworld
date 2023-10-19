@@ -8,7 +8,7 @@ import { useAppStore } from '@/app/lib/store/useAppStore';
 import styles from './styles.module.scss';
 import { ARTICLES_PER_PAGE } from '@/app/lib/constants';
 
-export default function ArticlePagination() {
+export default function MainPagePagination() {
   const numArticles = useAppStore(store => store.numArticles);
   const currentPageNumber = useAppStore(store => store.pageNum);
 

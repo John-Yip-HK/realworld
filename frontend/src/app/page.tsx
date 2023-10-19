@@ -1,7 +1,5 @@
-import ArticlePagination from './components/ArticlePagination';
-import ArticlePreviews from './components/ArticlePreviews';
+import MainPage from './components/MainPage';
 import MainPageBanner from './components/MainPageBanner';
-import MainPageTabs from './components/MainPageTabs';
 
 import Tags from './components/Tags';
 
@@ -13,12 +11,10 @@ export default function HomePage() {
         <div className="container page">
           <div className="row">
             <div className="col-md-9">
-              <MainPageTabs />
-              <ArticlePreviews />
-              <ArticlePagination />
+              <MainPage />
             </div>
             <div className="col-md-3">
-              <Tags />
+              {/* <Tags /> */}
             </div>
           </div>
         </div>
