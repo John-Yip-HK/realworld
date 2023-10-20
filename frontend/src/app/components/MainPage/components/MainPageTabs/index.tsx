@@ -2,7 +2,9 @@
 
 import {
   type MouseEventHandler,
-  useEffect
+  type ReactElement,
+  useEffect,
+  useState,
 } from 'react';
 
 import { useAppStore } from '@/app/lib/store/useAppStore';
@@ -20,7 +22,7 @@ export default function MainPageTabs({
   const setPageNumber = useAppStore(store => store.setPageNum);
   const setNumArticles = useAppStore(store => store.setNumArticles);
 
-  // const tags = useAppStore(store => store.tags);
+  const tags = useAppStore(store => store.tags);
   const selectedTab = useAppStore(store => store.selectedTab);
   const setSelectedTab = useAppStore(store => store.setSelectedTab);
 
@@ -51,7 +53,15 @@ export default function MainPageTabs({
     /> :
     null;
 
-  const selectedTagTab = null;
+  const tagTab = tags.includes(selectedTab) ?
+    <Tab
+      key={selectedTab}
+      isActive
+      label={`# ${selectedTab}`}
+      linkName={selectedTab}
+      onTabClick={onTabChange}
+    /> :
+    null;
 
   return (
   <div className="feed-toggle">
@@ -64,7 +74,7 @@ export default function MainPageTabs({
         linkName={GLOBAL_FEED_LINK_NAME}
         onTabClick={onTabChange}
       />
-      {selectedTagTab}
+      {tagTab}
     </ul>
   </div>
   )

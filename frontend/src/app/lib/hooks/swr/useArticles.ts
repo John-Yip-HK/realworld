@@ -1,7 +1,5 @@
 import useSWR, { type SWRResponse } from "swr";
 
-import { useEffect, useState } from 'react';
-
 import { useAppStore } from '@/app/lib/store/useAppStore';
 
 import { ARTICLES_FEED_PATH, ARTICLES_PATH } from '@/app/api/constants';
@@ -45,33 +43,26 @@ export function useArticles(isLoggedIn: boolean): UseArticlesResponse {
   const { data: articleResponse, error: getArticleError, isLoading, ...otherProps } = getArticles;
   const { isValidating } = otherProps;
 
-  useEffect(() => {
-    if (articleResponse) {
-      if ('articlesCount' in articleResponse) {
-        setNumArticles(articleResponse.articlesCount);
-      } else if ('errors' in articleResponse) {
-        setNumArticles(0);
-      }
-    }
-    else if (getArticleError) {
-      setNumArticles(0);
-    }
-  }, [articleResponse, getArticleError, setNumArticles]);
-
   if (articleResponse && !isValidating) {
     if ('articles' in articleResponse) {
+      setNumArticles(articleResponse.articlesCount);
+
       return {
         articles: articleResponse.articles,
         ...otherProps,
       };
     }
     if ('errors' in articleResponse) {
+      setNumArticles(0);
+
       return {
         error: articleResponse.errors,
         ...otherProps,
       }
     }
     else if ('status' in articleResponse) {
+      setNumArticles(0);
+
       return {
         error: articleResponse.message,
         ...otherProps,
@@ -83,6 +74,8 @@ export function useArticles(isLoggedIn: boolean): UseArticlesResponse {
       error: getArticleError,
       ...otherProps,
     }
+  } else {
+    setNumArticles(0);
   }
 
   return otherProps;
