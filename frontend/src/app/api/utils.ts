@@ -5,3 +5,9 @@ export function getApiPath(...paths: string[]) {
 
   return path.join(BASE_API_PATH, ...paths);
 }
+
+export function setAuthorizationHeader(header: Headers, token?: string) {
+  if (token) {
+    header.set('Authorization', `Bearer ${token}`);
+  }
+}
