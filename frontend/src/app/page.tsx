@@ -14,7 +14,7 @@ export default function HomePage() {
               <MainPage />
             </div>
             <div className="col-md-3">
-              {/* <Tags /> */}
+              <Tags />
             </div>
           </div>
         </div>

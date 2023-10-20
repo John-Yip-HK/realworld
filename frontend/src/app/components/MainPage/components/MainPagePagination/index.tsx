@@ -1,7 +1,7 @@
 'use client';
 
 import { clsx } from 'clsx';
-import { type KeyboardEventHandler, type MouseEventHandler, type ReactElement } from 'react';
+import { useRef, type KeyboardEventHandler, type MouseEventHandler, type ReactElement } from 'react';
 
 import { useAppStore } from '@/app/lib/store/useAppStore';
 
@@ -24,7 +24,7 @@ export default function MainPagePagination() {
     .fill(null)
     .map((_, index) =>
       (
-        <PageItem
+        <PageLink
           key={index}
           pageNumber={index}
           isActive={index === currentPageNumber}
@@ -39,15 +39,15 @@ export default function MainPagePagination() {
   )
 }
 
-interface PageItemProps {
+interface PageLinkProps {
   isActive: boolean;
   pageNumber: number;
 }
 
-function PageItem({
+function PageLink({
   isActive,
   pageNumber,
-}: PageItemProps) {
+}: PageLinkProps) {
   const pageItemCls = clsx('page-item', styles['page-item'], isActive ? 'active' : undefined);
   const pageLinkCls = clsx('page-link', styles['page-link']);
 
@@ -56,21 +56,23 @@ function PageItem({
     event.preventDefault();
     setPageNumber(pageNum);
   };
-  const onChangePageNumByEnter: (pageNum: number) => KeyboardEventHandler<HTMLAnchorElement> = (pageNum) => (event) => {
-    event.preventDefault();
 
+  const anchorRef = useRef<HTMLAnchorElement>(null);
+
+  const onFocusKeyDown: KeyboardEventHandler<HTMLAnchorElement> = (event) => {
     if (event.code === 'Enter') {
-      setPageNumber(pageNum);
+      anchorRef.current?.click();
     }
   };
 
   return (
     <li className={pageItemCls}>
       <a
+        ref={anchorRef}
         tabIndex={0}
         className={pageLinkCls}
         onClick={onChangePageNum(pageNumber)}
-        onKeyUp={onChangePageNumByEnter(pageNumber)}
+        onKeyDown={onFocusKeyDown}
       >
         {pageNumber + 1}
       </a>
