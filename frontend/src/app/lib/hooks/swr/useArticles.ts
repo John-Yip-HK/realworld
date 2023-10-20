@@ -6,7 +6,7 @@ import { ARTICLES_FEED_PATH, ARTICLES_PATH } from '@/app/api/constants';
 import { YOUR_FEED_LINK_NAME } from '@/app/components/MainPage/components/MainPageTabs/constants';
 
 import { ARTICLES_PER_PAGE } from '../../constants';
-import { getJsonFetch } from '../../api/customFetch';
+import { routeHandlerFetch } from '../../api/customFetch';
 
 type ExpectedResponse = GetArticlesResponse | GetArticleFeedsResponse;
 
@@ -33,10 +33,7 @@ export function useArticles(isLoggedIn: boolean): UseArticlesResponse {
   const baseFetchUrl = isLoggedIn && selectedTab === YOUR_FEED_LINK_NAME ? ARTICLES_FEED_PATH : ARTICLES_PATH;
   const fetchUrl = `${baseFetchUrl}?${searchParams.toString()}`;
 
-  const getArticles = useSWR<ExpectedResponse, unknown, [string, boolean]>([fetchUrl, isLoggedIn], ([fetchUrl, isLoggedIn]) => getJsonFetch(fetchUrl, {
-    loggedIn: isLoggedIn,
-    isClientFetch: true,
-  }), {
+  const getArticles = useSWR<ExpectedResponse, unknown, string>(fetchUrl, routeHandlerFetch, {
     revalidateOnFocus: false,
   });
 

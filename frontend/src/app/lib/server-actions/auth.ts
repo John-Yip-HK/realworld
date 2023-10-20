@@ -4,12 +4,10 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 
-import { getApiPath } from '../../api/utils';
-
 import { TOKEN_COOKIE_NAME, UNKNOWN_ERROR_OBJECT } from '@/app/constants/user';
 
 import { LOGIN_PATH, USERS_PATH } from '../../api/constants';
-import { getJsonFetch } from '../../lib/api/customFetch';
+import { fetchFromServer } from '../../lib/api/customFetch';
 
 function setAuthCookie(token: string) {
   cookies().set(TOKEN_COOKIE_NAME, token, {
@@ -35,14 +33,11 @@ export async function signUpNewUserServerAction(_: unknown, formData: FormData) 
   }
 
   try {
-    const signUpUserResponse: SignUpUserResponse = await getJsonFetch(getApiPath(USERS_PATH), {
+    const signUpUserResponse: SignUpUserResponse = await fetchFromServer(USERS_PATH, {
       method: 'POST',
       body: {
         user: newUser,
       },
-
-      // TODO: This flag will be removed.
-      loggedIn: false,
     });
 
     if ('errors' in signUpUserResponse) {
@@ -79,14 +74,11 @@ export async function loginServerAction(_: unknown, formData: FormData) {
   }
 
   try {
-    const loginResponse: LogInUserResponse = await getJsonFetch(getApiPath(LOGIN_PATH), {
+    const loginResponse: LogInUserResponse = await fetchFromServer(LOGIN_PATH, {
       method: 'POST',
       body: {
         user: loginCredentials,
       },
-
-      // TODO: This flag will be removed.
-      loggedIn: false,
     });
 
     if ('errors' in loginResponse) {

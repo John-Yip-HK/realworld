@@ -1,9 +1,10 @@
 /* eslint-disable @next/next/no-img-element */
 import { useEffect, useState } from 'react'
-import { getJsonFetch } from '@/app/lib/api/customFetch';
+import { routeHandlerFetch } from '@/app/lib/api/customFetch';
 
 import NavLink from './NavLink';
 import styles from '../styles.module.scss';
+import { USER_PATH } from '@/app/api/constants';
 
 interface UserNavLinkProps {
   isAuthenticated: boolean;
@@ -20,7 +21,7 @@ export default function UserNavLink({
 
   useEffect(() => {
     if (isAuthenticated) {
-      getJsonFetch('/api/user')
+      routeHandlerFetch(USER_PATH)
         .then(({ user: { username, image } }) => {
           setUsername(username);
           setImageUrl(image);

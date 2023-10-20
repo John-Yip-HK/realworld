@@ -1,12 +1,10 @@
 import { USER_PATH } from "../api/constants";
-import { getJsonFetch } from "../lib/api/customFetch"
+import { routeHandlerFetch } from "../lib/api/customFetch"
 
 export default async function SettingsPage() {
-  const userInfo = await getJsonFetch(USER_PATH, {
-    isServerFetch: true,
-  });
+  // const userInfo = await routeHandlerFetch(USER_PATH);
 
-  console.info(userInfo);
+  // console.info(userInfo);
 
   return (
     <div className="settings-page">

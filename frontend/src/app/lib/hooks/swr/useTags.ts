@@ -2,7 +2,7 @@ import useSWR, { type SWRResponse } from 'swr';
 
 import { TAGS_PATH } from '@/app/api/constants';
 
-import { getJsonFetch } from '../../api/customFetch';
+import { routeHandlerFetch } from '../../api/customFetch';
 import { useAppStore } from '../../store/useAppStore';
 
 interface UseTagsResponse extends Pick<SWRResponse<GetTagsResponse>, 'isValidating'> {
@@ -13,9 +13,7 @@ interface UseTagsResponse extends Pick<SWRResponse<GetTagsResponse>, 'isValidati
 export function useTags(): UseTagsResponse {
   const setTags = useAppStore(state => state.setTags);
 
-  const { data, error, isValidating } = useSWR<GetTagsResponse, unknown>(TAGS_PATH, (fetchUrl) => getJsonFetch(fetchUrl, {
-    isClientFetch: true,
-  }), {
+  const { data, error, isValidating } = useSWR<GetTagsResponse, unknown>(TAGS_PATH, routeHandlerFetch, {
     revalidateOnFocus: false,
   });
 

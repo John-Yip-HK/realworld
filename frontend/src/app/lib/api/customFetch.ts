@@ -1,23 +1,14 @@
-import { useAppStore } from "../store/useAppStore";
-
 import { DEFAULT_HEADERS } from "@/app/api/constants";
+import { getApiPath } from "@/app/api/utils";
 
-export type FetchOptions = {
-  method?: string;
+export type FetchOptions = Omit<RequestInit, 'body'> & {
   body?: object;
-  isClientFetch?: boolean;
   isServerFetch?: boolean;
-  loggedIn?: boolean;
-  headers?: RequestInit['headers'];
 };
+type CustomFetchOptions = Omit<FetchOptions, 'isServerFetch'>;
 
-/**
- * `loggedIn` parameter in `options` is `true` by default.
- */
-export const customFetch = (url: string, options: FetchOptions = {
-  loggedIn: true,
-}) => {
-  let obj: RequestInit = {
+const customFetch = (url: string, options?: CustomFetchOptions) => {
+  const obj: RequestInit = {
     headers: DEFAULT_HEADERS,
   };
 
@@ -36,37 +27,27 @@ export const customFetch = (url: string, options: FetchOptions = {
         ...options.headers,
       };
     }
-
-    if (options.loggedIn) {
-      const authToken = useAppStore.getState().authToken;
-
-      if (authToken === null) {
-        throw new Error('You are not logged in.');
-      }
-
-      obj.headers = {
-        ...obj.headers,
-        'Authorization': `Bearer ${authToken}`,
-      };
-    }
   }
 
   return fetch(url, obj);
 };
 
-export const getJsonFetch = async (url: string, options: FetchOptions = {
-  loggedIn: true,
-}) => {
-  let fetchUrl = url;
+export const routeHandlerFetch = async (url: string, options?: FetchOptions) => {
+  let fetchUrl = `/api${url.charAt(0) === '/' ? url : '/' + url}`;
 
-  if (options.isClientFetch) {
-    fetchUrl = `/api${url.charAt(0) === '/' ? url : '/' + url}`;
-  }
-  else if (options.isServerFetch) {
-    // TODO: Change hostname according to environment
-    fetchUrl = `http://localhost:3000/api${url.charAt(0) === '/' ? url : '/' + url}`;
+  if (options?.isServerFetch) {
+    fetchUrl = url;
   }
 
   const response = await customFetch(fetchUrl, options);
   return await response.json();
+}
+
+export const fetchFromServer = async (url: string, options?: CustomFetchOptions) => {
+  const serverFetchUrl = getApiPath(url);
+
+  return routeHandlerFetch(serverFetchUrl, {
+    ...options,
+    isServerFetch: true,
+  });
 }
