@@ -1,38 +1,26 @@
 /* eslint-disable @next/next/no-img-element */
-import { useEffect, useState } from 'react'
-import { routeHandlerFetch } from '@/app/lib/api/customFetch';
+import { fetchFromServer } from '@/app/lib/api/customFetch';
 
 import NavLink from './NavLink';
-import styles from '../styles.module.scss';
 import { USER_PATH } from '@/app/api/constants';
 
-interface UserNavLinkProps {
-  isAuthenticated: boolean;
-};
+import './styles.scss';
+import { cookies } from 'next/headers';
+import { TOKEN_COOKIE_NAME } from '@/app/constants/user';
 
-const hideLinkClass = styles['nav-link__hidden'];
-
-export default function UserNavLink({
-  isAuthenticated
-}: UserNavLinkProps) {
-  const [username, setUsername] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
-  const [anchorClassName, setAnchorClassName] = useState<string | undefined>(hideLinkClass);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      routeHandlerFetch(USER_PATH)
-        .then(({ user: { username, image } }) => {
-          setUsername(username);
-          setImageUrl(image);
-          setAnchorClassName(undefined);
-        });
-    } else {
-      setAnchorClassName(hideLinkClass);
+export default async function UserNavLink() {
+  const authToken = cookies().get(TOKEN_COOKIE_NAME);
+  const userResponse = await fetchFromServer(USER_PATH, {
+    headers: {
+      'Authorization': `Bearer ${authToken?.value}`,
     }
-  }, [isAuthenticated]);
+  }) as LogInUserResponse;
 
-  if (isAuthenticated) {
+  console.log(userResponse);
+  
+  if (userResponse && 'user' in userResponse) {
+    const { username, image: imageUrl, } = userResponse.user;
+
     return (
       <NavLink
         key='/profile'
@@ -44,10 +32,8 @@ export default function UserNavLink({
               {username}
             </>
           ),
-          protectedLink: true
+          protectedLink: true,
         }}
-        isActive={false}
-        className={anchorClassName}
       />
     )
   } else {

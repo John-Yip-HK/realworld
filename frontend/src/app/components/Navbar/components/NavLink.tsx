@@ -1,27 +1,33 @@
-import { clsx } from 'clsx';
+'use client';
 
-import type { NavLinkProps } from '../types';
+import { clsx } from 'clsx';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 type Props = {
   link: NavLinkProps;
-  isActive: boolean;
   className?: string;
 }
 
 export default function NavLink({
-  link, isActive, className: anchorClassName
+  link, className: anchorClassName
 }: Props) {
+  const pathname = usePathname();
+  const isActive = pathname === link.href;
+  
+  const cls = clsx('nav-link', {
+    active: isActive,
+  }, anchorClassName);
+  
   return (
     <li className="nav-item" key={link.href}>
       {/* Add "active" className when you're on that page" */}
-      <a
+      <Link
         href={link.href}
-        className={clsx('nav-link', {
-          active: isActive,
-        }, anchorClassName)}
+        className={cls}
       >
         {link.children}
-      </a>
+      </Link>
     </li>
   )
 }
