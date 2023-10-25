@@ -12,6 +12,7 @@ interface UseTagsResponse extends Pick<SWRResponse<GetTagsResponse>, 'isValidati
 
 export function useTags(): UseTagsResponse {
   const setTags = useAppStore(state => state.setTags);
+  const resetTags = useAppStore(state => state.resetTags);
 
   const { data, error, isValidating } = useSWR<GetTagsResponse, unknown>(TAGS_PATH, routeHandlerFetch, {
     revalidateOnFocus: false,
@@ -37,6 +38,8 @@ export function useTags(): UseTagsResponse {
       isValidating,
     };
   }
+
+  resetTags();
 
   return {
     isValidating,

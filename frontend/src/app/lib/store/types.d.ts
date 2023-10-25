@@ -1,10 +1,3 @@
-interface AuthSlice {
-  authToken?: string;
-
-  setAuthToken: (token: string) => void;
-  resetToken: () => void;
-}
-
 interface TagSlice {
   /** Assume it is an array of single-word English words. */
   tags: string[];
@@ -28,4 +21,4 @@ interface MainPageTabSlice {
   resetSelectedTab: () => void;
 }
 
-type AppStore = AuthSlice & TagSlice & ArticleSlice & MainPageTabSlice;
+type AppStore = TagSlice & ArticleSlice & MainPageTabSlice;
