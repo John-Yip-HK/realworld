@@ -6,7 +6,7 @@ import { useRef, type KeyboardEventHandler, type MouseEventHandler, type ReactEl
 import { useAppStore } from '@/app/lib/store/useAppStore';
 
 import styles from './styles.module.scss';
-import { ARTICLES_PER_PAGE } from '@/app/lib/constants';
+import { ARTICLES_PER_PAGE } from '@/app/constants/article';
 
 export default function MainPagePagination() {
   const numArticles = useAppStore(store => store.numArticles);

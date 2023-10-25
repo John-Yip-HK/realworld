@@ -5,7 +5,7 @@ import { useAppStore } from '@/app/lib/store/useAppStore';
 import { ARTICLES_FEED_PATH, ARTICLES_PATH } from '@/app/api/constants';
 import { YOUR_FEED_LINK_NAME } from '@/app/components/MainPage/components/MainPageTabs/constants';
 
-import { ARTICLES_PER_PAGE } from '../../constants';
+import { ARTICLES_PER_PAGE } from '../../../constants/article';
 import { routeHandlerFetch } from '../../api/customFetch';
 
 type ExpectedResponse = GetArticlesResponse | GetArticleFeedsResponse;

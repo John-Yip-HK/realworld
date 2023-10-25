@@ -6,7 +6,7 @@ import { cookies } from 'next/headers';
 
 import { TOKEN_COOKIE_NAME, UNKNOWN_ERROR_OBJECT } from '@/app/constants/user';
 
-import { LOGIN_PATH, USERS_PATH } from '../../api/constants';
+import { LOGIN_PATH, USERS_PATH } from '../../constants/user';
 import { fetchFromServer } from '../../lib/api/customFetch';
 
 function setAuthCookie(token: string) {

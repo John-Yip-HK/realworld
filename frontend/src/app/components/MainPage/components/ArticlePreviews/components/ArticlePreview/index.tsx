@@ -2,7 +2,7 @@ import { type MouseEventHandler } from 'react';
 
 import { useRouter } from 'next/navigation';
 
-import { SIGN_UP_PATH } from '@/app/lib/constants';
+import { SIGN_UP_PATH } from '@/app/constants/user';
 
 interface ArticlePreviewProps {
   article: Article;
@@ -49,7 +49,7 @@ export default function ArticlePreview({
       router.push(SIGN_UP_PATH);
     }
   }
-  
+
   return (
     <div className="article-preview">
       <div className="article-meta">
