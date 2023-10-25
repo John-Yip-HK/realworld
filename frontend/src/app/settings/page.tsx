@@ -1,4 +1,3 @@
-import { USER_PATH } from "../api/constants";
 import { routeHandlerFetch } from "../lib/api/customFetch"
 
 export default async function SettingsPage() {

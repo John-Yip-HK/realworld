@@ -1,12 +1,14 @@
-/* eslint-disable @next/next/no-img-element */
+import { cookies } from 'next/headers';
+import Image from 'next/image';
+
 import { fetchFromServer } from '@/app/lib/api/customFetch';
+import { getProfileNavPath } from '@/app/lib/profile/utils';
 
 import NavLink from './NavLink';
-import { USER_PATH } from '@/app/api/constants';
+
+import { TOKEN_COOKIE_NAME, USER_PATH } from '@/app/constants/user';
 
 import './styles.scss';
-import { cookies } from 'next/headers';
-import { TOKEN_COOKIE_NAME } from '@/app/constants/user';
 
 export default async function UserNavLink() {
   const authToken = cookies().get(TOKEN_COOKIE_NAME);
@@ -14,21 +16,26 @@ export default async function UserNavLink() {
     headers: {
       'Authorization': `Bearer ${authToken?.value}`,
     }
-  }) as LogInUserResponse;
+  }) as LogInUserResponse | string;
 
-  console.log(userResponse);
-  
-  if (userResponse && 'user' in userResponse) {
+  if (typeof userResponse !== 'string' && 'user' in userResponse) {
     const { username, image: imageUrl, } = userResponse.user;
+    const userProfileHref = getProfileNavPath(username);
 
     return (
       <NavLink
-        key='/profile'
+        key={userProfileHref}
         link={{
-          href: '/profile',
+          href: userProfileHref,
           children: (
             <>
-              <img alt={username !== '' ? `Image of ${username}` : 'Empty user image'} src={imageUrl} className='user-pic' />
+              <Image 
+                alt={username !== '' ? `Image of ${username}` : 'Empty user image'} 
+                src={imageUrl} 
+                className='user-pic'
+                width={26}
+                height={26}
+              />
               {username}
             </>
           ),

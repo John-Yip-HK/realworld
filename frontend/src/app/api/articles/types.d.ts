@@ -22,9 +22,6 @@ interface GetArticlesSuccessResponse {
   articles: Article[];
   articlesCount: number;
 };
-type GetArticlesError = Record<string, string[]>;
-interface GetArticlesErrorResponse {
-  errors: GetArticlesError;
-};
+type GetArticlesErrorResponse = ConduitApiError;
 
 type GetArticlesResponse = GetArticlesErrorResponse | GetArticlesSuccessResponse;

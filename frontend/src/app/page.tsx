@@ -1,5 +1,5 @@
 import MainPage from './components/MainPage';
-import MainPageBanner from './components/MainPageBanner';
+import MainPageBanner from './components/MainPage/components/MainPageBanner';
 
 import Tags from './components/Tags';
 

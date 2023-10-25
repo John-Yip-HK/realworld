@@ -18,9 +18,7 @@ export default function Tab({
 }: TabProps) {
   const navLinkCls = clsx(
     'nav-link',
-    {
-      active: isActive,
-    }
+    { active: isActive, }
   );
   const anchorRef = useRef<HTMLAnchorElement>(null);
 

@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import { type MouseEventHandler } from 'react';
 
 import { useRouter } from 'next/navigation';
@@ -54,7 +55,7 @@ export default function ArticlePreview({
     <div className="article-preview">
       <div className="article-meta">
         <a href={profileLink}>
-          <img src={image} />
+          <img src={image} alt={`Profile image of ${username}`} />
         </a>
         <div className="info">
           <a href={profileLink} className="author">{username}</a>

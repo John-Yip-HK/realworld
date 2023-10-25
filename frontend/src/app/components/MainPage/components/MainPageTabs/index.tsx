@@ -2,14 +2,13 @@
 
 import {
   type MouseEventHandler,
-  type ReactElement,
   useEffect,
-  useState,
 } from 'react';
 
 import { useAppStore } from '@/app/lib/store/useAppStore';
+import TabContainer from '@/app/components/TabContainer';
 
-import Tab from './components/Tab';
+import Tab from '../../../Tab';
 import { GLOBAL_FEED_LINK_NAME, YOUR_FEED_LINK_NAME } from './constants';
 
 interface MainPageTabsProps {
@@ -65,7 +64,7 @@ export default function MainPageTabs({
 
   return (
   <div className="feed-toggle">
-    <ul className="nav nav-pills outline-active">
+    <TabContainer>
       {yourFeedTab}
       <Tab
         key={GLOBAL_FEED_LINK_NAME}
@@ -75,7 +74,7 @@ export default function MainPageTabs({
         onTabClick={onTabChange}
       />
       {tagTab}
-    </ul>
+    </TabContainer>
   </div>
   )
 }

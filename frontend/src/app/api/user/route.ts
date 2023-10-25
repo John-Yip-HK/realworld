@@ -1,6 +1,8 @@
-import { extractResponseInfo } from "@/app/lib/api/handleResponse";
 import { NextResponse } from "next/server";
-import { USER_PATH } from "../constants";
+
+import { extractResponseInfo } from "@/app/lib/api/handleResponse";
+
+import { USER_PATH } from "@/app/constants/user";
 
 export async function GET(request: Request) {
   const { headers } = request;

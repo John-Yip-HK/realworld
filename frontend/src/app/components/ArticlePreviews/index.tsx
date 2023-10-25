@@ -1,19 +1,18 @@
-'use client';
-
-import { useArticles } from '@/app/lib/hooks/swr/useArticles';
-
 import ArticlePreview from './components/ArticlePreview';
-
 import './styles.scss';
 
-interface ArticlePreviewsProps {
+interface ArticlePreviewsProps extends Pick<GetArticlesSuccessResponse, 'articles'> {
+  error: unknown;
   isLoggedIn: boolean;
+  loadingArticles: boolean;
 }
 
 export default function ArticlePreviews({
+  articles,
+  error,
   isLoggedIn,
+  loadingArticles,
 }: ArticlePreviewsProps) {
-  const { articles, isValidating: loadingArticles, error } = useArticles(isLoggedIn);
   const shouldShowBottomDiv = loadingArticles || articles?.length === 0 || error;
   const divCls = shouldShowBottomDiv ? 'article-preview' : 'article-preview--hidden';
   const caption = loadingArticles ?
@@ -27,11 +26,11 @@ export default function ArticlePreviews({
             null
         )
     );
-
+  
   return (
     <>
       {
-        articles?.map(article => (
+        articles.map((article) => (
           <ArticlePreview
             key={article.slug}
             article={article}
@@ -43,5 +42,5 @@ export default function ArticlePreviews({
         <p>{caption}</p>
       </div>
     </>
-  );
+  )
 }

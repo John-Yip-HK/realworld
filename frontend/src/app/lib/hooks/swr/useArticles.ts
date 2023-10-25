@@ -33,15 +33,18 @@ export function useArticles(isLoggedIn: boolean): UseArticlesResponse {
   const baseFetchUrl = isLoggedIn && selectedTab === YOUR_FEED_LINK_NAME ? ARTICLES_FEED_PATH : ARTICLES_PATH;
   const fetchUrl = `${baseFetchUrl}?${searchParams.toString()}`;
 
-  const getArticles = useSWR<ExpectedResponse, unknown, string>(fetchUrl, routeHandlerFetch, {
+  const getArticles = useSWR<ExpectedResponse>(fetchUrl, routeHandlerFetch, {
     revalidateOnFocus: false,
+    dedupingInterval: 0,
   });
 
   const { data: articleResponse, error: getArticleError, isLoading, ...otherProps } = getArticles;
   const { isValidating } = otherProps;
 
   if (articleResponse && !isValidating) {
-    if ('articles' in articleResponse) {
+    const isServerError = typeof articleResponse === 'string';
+    
+    if (!isServerError && 'articles' in articleResponse) {
       setNumArticles(articleResponse.articlesCount);
 
       return {
@@ -49,17 +52,22 @@ export function useArticles(isLoggedIn: boolean): UseArticlesResponse {
         ...otherProps,
       };
     }
-    if ('errors' in articleResponse) {
-      setNumArticles(0);
 
+    setNumArticles(0);
+
+    if (isServerError) {
+      return {
+        error: articleResponse,
+        ...otherProps,
+      }
+    }
+    else if ('errors' in articleResponse) {
       return {
         error: articleResponse.errors,
         ...otherProps,
       }
     }
     else if ('status' in articleResponse) {
-      setNumArticles(0);
-
       return {
         error: articleResponse.message,
         ...otherProps,
