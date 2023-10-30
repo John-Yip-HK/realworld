@@ -87,7 +87,17 @@ export async function loginServerAction(_: unknown, formData: FormData) {
       return {
         errors,
       }
-    } else {
+    }
+    else if ('status' in loginResponse) {
+      const { message } = loginResponse;
+
+      return {
+        errors: {
+          'Authorization Error': [message.charAt(0).toUpperCase() + message.slice(1)],
+        },
+      };
+    }
+    else {
       setAuthCookie(loginResponse.user.token);
     }
   } catch {
@@ -95,6 +105,17 @@ export async function loginServerAction(_: unknown, formData: FormData) {
       errors: UNKNOWN_ERROR_OBJECT,
     };
   }
+
+  revalidatePath('/');
+  redirect('/');
+}
+
+export async function logOutServerAction() {
+  cookies().delete(TOKEN_COOKIE_NAME);
+
+  await new Promise((res) => {
+    setTimeout(res, 1000);
+  });
 
   revalidatePath('/');
   redirect('/');

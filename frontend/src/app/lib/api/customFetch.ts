@@ -5,9 +5,9 @@ export type FetchOptions = Omit<RequestInit, 'body'> & {
   body?: object;
   isServerFetch?: boolean;
 };
-type CustomFetchOptions = Omit<FetchOptions, 'isServerFetch'>;
+export type CustomFetchOptions = Omit<FetchOptions, 'isServerFetch'>;
 
-const customFetch = (url: string, options?: CustomFetchOptions) => {
+export const customFetch = (url: string, options?: CustomFetchOptions) => {
   const obj: RequestInit = {
     headers: DEFAULT_HEADERS,
   };
@@ -39,7 +39,10 @@ export const routeHandlerFetch = async (url: string, options?: FetchOptions) => 
     fetchUrl = url;
   }
 
-  const response = await customFetch(fetchUrl, options);
+  const response = await customFetch(fetchUrl, {
+    ...options,
+    cache: 'no-store',
+  });
   return await response.json();
 }
 

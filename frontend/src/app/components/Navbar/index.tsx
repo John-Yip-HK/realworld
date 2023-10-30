@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-import { hasAuthCookie } from '@/app/lib/hasAuthCookie';
+import { hasAuthCookie } from '@/app/lib/authCookieUtils';
 
 import NavLinks from './components/NavLinks';
 import UserNavLink from './components/UserNavLink';

@@ -2,7 +2,7 @@ import { clsx } from 'clsx';
 
 import styles from './styles.module.scss';
 
-import { hasAuthCookie } from '@/app/lib/hasAuthCookie';
+import { hasAuthCookie } from '@/app/lib/authCookieUtils';
 
 export default function MainPageBanner() {
   const hasAuthToken = hasAuthCookie();

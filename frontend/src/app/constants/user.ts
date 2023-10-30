@@ -12,4 +12,4 @@ export const DUMMY_USER_OBJECT = {
   username: '',
   email: '',
   password: '',
-} satisfies User;
+} satisfies UserCredentials;

@@ -1,31 +1,11 @@
 type CredentialType = ReturnType<FormData['get']>;
+type UserCredentaialKeys = keyof UserCredentials;
 
-interface User {
-  username: string;
-  email: string;
-  password: string;
-}
-
-type NewUserCredentials = Record<keyof User, CredentialType>;
-
-type UserMetadata = Pick<User, 'username' | 'email'> & {
-  token: string;
-  bio: string | null;
-  image: string;
-};
-
-type AuthError = Record<string, string[]>
-type AuthErrorResponse = {
-  errors: AuthError;
-}
+type NewUserCredentials = Record<UserCredentaialKeys, CredentialType>;
 
 /* Sign up user types */
-type SignInUserSuccessResponse = {
-  user: UserMetadata;
-}
-type SignUpUserResponse = SignInUserSuccessResponse | AuthErrorResponse;
+type SignUpUserResponse = Exclude<GetUserResponse, UnauthorizedError>;
 
 /* Log in user types */
-type LogInUserSuccessResponse = SignInUserSuccessResponse;
-type LogInCredentials = Record<'email' | 'password', CredentialType>;
-type LogInUserResponse = LogInUserSuccessResponse | AuthErrorResponse;
+type LogInCredentials = Record<Exclude<UserCredentaialKeys, 'username'>, CredentialType>;
+type LogInUserResponse = GetUserResponse;

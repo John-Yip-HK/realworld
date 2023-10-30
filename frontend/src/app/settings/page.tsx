@@ -1,9 +1,15 @@
-import { routeHandlerFetch } from "../lib/api/customFetch"
+import { fetchFromServer } from '../lib/api/fetchFromServer';
+import SettingsFormContainer from './components/SettingsFormContainer';
+import LogOutButton from './components/LogOutButton';
+
+import { USER_PATH } from '../constants/user';
 
 export default async function SettingsPage() {
-  // const userInfo = await routeHandlerFetch(USER_PATH);
+  const userInfo = await fetchFromServer(USER_PATH) as GetUserResponse;
 
-  // console.info(userInfo);
+  if (!('user' in userInfo)) {
+    throw new Error('Failed to get user information.');
+  }
 
   return (
     <div className="settings-page">
@@ -11,41 +17,11 @@ export default async function SettingsPage() {
         <div className="row">
           <div className="col-md-6 offset-md-3 col-xs-12">
             <h1 className="text-xs-center">Your Settings</h1>
-
-            {/* <ul className="error-messages">
-              <li>That name is required</li>
-            </ul> */}
-
-            <form>
-              <fieldset>
-                <fieldset className="form-group">
-                  <input className="form-control" type="text" placeholder="URL of profile picture" />
-                </fieldset>
-                <fieldset className="form-group">
-                  <input className="form-control form-control-lg" type="text" placeholder="Your Name" />
-                </fieldset>
-                <fieldset className="form-group">
-                  <textarea
-                    className="form-control form-control-lg"
-                    rows={8}
-                    placeholder="Short bio about you"
-                  ></textarea>
-                </fieldset>
-                <fieldset className="form-group">
-                  <input className="form-control form-control-lg" type="email" placeholder="Email" />
-                </fieldset>
-                <fieldset className="form-group">
-                  <input
-                    className="form-control form-control-lg"
-                    type="password"
-                    placeholder="New Password"
-                  />
-                </fieldset>
-                <button className="btn btn-lg btn-primary pull-xs-right">Update Settings</button>
-              </fieldset>
-            </form>
+            <SettingsFormContainer
+              user={userInfo.user}
+            />
             <hr />
-            <button className="btn btn-outline-danger">Or click here to logout.</button>
+            <LogOutButton />
           </div>
         </div>
       </div>

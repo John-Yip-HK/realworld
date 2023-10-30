@@ -1,4 +1,4 @@
-import { hasAuthCookie } from '@/app/lib/hasAuthCookie';
+import { hasAuthCookie } from '@/app/lib/authCookieUtils';
 
 import ArticlePreviewsContainer from './components/ArticlePreviewsContainer';
 import MainPagePagination from './components/MainPagePagination';
