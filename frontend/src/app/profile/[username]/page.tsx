@@ -1,11 +1,11 @@
-import { cookies } from 'next/headers';
-
-import { fetchFromServer } from '@/app/lib/api/customFetch';
+import { fetchFromServer } from '@/app/lib/api/fetchFromServer';
 import { getProfileApiPath } from '@/app/lib/profile/utils';
+import { hasAuthCookie } from '@/app/lib/authCookieUtils';
 
-import { TOKEN_COOKIE_NAME, USER_PATH } from '@/app/constants/user';
 import UserInfo from './components/UserInfo';
 import ProfileArticles from './components/ProfileArticles';
+
+import { USER_PATH } from '@/app/constants/user';
 
 interface ProfilePageProps {
   params: {
@@ -14,17 +14,16 @@ interface ProfilePageProps {
 };
 
 export default async function ProfilePage({ params: { username } }: ProfilePageProps) {
-  const authToken = cookies().get(TOKEN_COOKIE_NAME);
-  const isLoggedIn = authToken?.value !== undefined && authToken.value !== '';
+  const isLoggedIn = hasAuthCookie();
 
   const getUserPromise = isLoggedIn ? 
     fetchFromServer(USER_PATH, {
-      headers: {
-        'Authorization': `Bearer ${authToken.value}`,
-      }
+      isLoggedIn,
     }) as Promise<LogInUserResponse | string> :
     Promise.resolve(null);
-  const getProfilePromise = fetchFromServer(getProfileApiPath(username)) as Promise<GetProfileResponse>;
+  const getProfilePromise = fetchFromServer(getProfileApiPath(username), {
+      isLoggedIn,
+    }) as Promise<GetProfileResponse>;
   const [userResponse, profileResponse] = await Promise.all([getUserPromise, getProfilePromise]);
 
   const serverHasError = typeof userResponse === 'string' || typeof profileResponse === 'string';

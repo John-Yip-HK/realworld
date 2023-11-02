@@ -1,16 +1,12 @@
 import { getApiPath } from "@/app/api/utils";
 
 import { 
-  type CustomFetchOptions, 
   customFetch,
 } from './customFetch';
 import { getAuthToken } from '../authCookieUtils';
+import { type FetchOptions } from './types';
 
-type FetchFromServerOptions = CustomFetchOptions & {
-  isLoggedIn?: boolean;
-};
-
-export const fetchFromServer = async (url: string, options?: FetchFromServerOptions) => {
+export const fetchFromServer = async (url: string, options?: FetchOptions) => {
   const defaultOptions = {
     isLoggedIn: true,
     ...structuredClone(options),

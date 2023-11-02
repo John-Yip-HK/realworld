@@ -1,21 +1,19 @@
-import { cookies } from 'next/headers';
 import Image from 'next/image';
 
-import { fetchFromServer } from '@/app/lib/api/customFetch';
+import { fetchFromServer } from '@/app/lib/api/fetchFromServer';
 import { getProfileNavPath } from '@/app/lib/profile/utils';
+import { hasAuthCookie } from '@/app/lib/authCookieUtils';
 
 import NavLink from './NavLink';
 
-import { TOKEN_COOKIE_NAME, USER_PATH } from '@/app/constants/user';
+import { USER_PATH } from '@/app/constants/user';
 
 import './styles.scss';
 
 export default async function UserNavLink() {
-  const authToken = cookies().get(TOKEN_COOKIE_NAME);
+  const isLoggedIn = hasAuthCookie();
   const userResponse = await fetchFromServer(USER_PATH, {
-    headers: {
-      'Authorization': `Bearer ${authToken?.value}`,
-    }
+    isLoggedIn,
   }) as LogInUserResponse | string;
 
   if (typeof userResponse !== 'string' && 'user' in userResponse) {

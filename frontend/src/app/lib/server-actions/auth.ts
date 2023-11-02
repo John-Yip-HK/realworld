@@ -7,7 +7,7 @@ import { cookies } from 'next/headers';
 import { TOKEN_COOKIE_NAME, UNKNOWN_ERROR_OBJECT } from '@/app/constants/user';
 
 import { LOGIN_PATH, USERS_PATH } from '../../constants/user';
-import { fetchFromServer } from '../../lib/api/customFetch';
+import { fetchFromServer } from '../../lib/api/fetchFromServer';
 
 function setAuthCookie(token: string) {
   cookies().set(TOKEN_COOKIE_NAME, token, {
@@ -38,6 +38,7 @@ export async function signUpNewUserServerAction(_: unknown, formData: FormData) 
       body: {
         user: newUser,
       },
+      isLoggedIn: false,
     });
 
     if ('errors' in signUpUserResponse) {
@@ -79,6 +80,7 @@ export async function loginServerAction(_: unknown, formData: FormData) {
       body: {
         user: loginCredentials,
       },
+      isLoggedIn: false,
     });
 
     if ('errors' in loginResponse) {

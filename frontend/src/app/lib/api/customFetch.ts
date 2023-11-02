@@ -1,11 +1,7 @@
 import { DEFAULT_HEADERS } from "@/app/api/constants";
 import { getApiPath } from "@/app/api/utils";
 
-export type FetchOptions = Omit<RequestInit, 'body'> & {
-  body?: object;
-  isServerFetch?: boolean;
-};
-export type CustomFetchOptions = Omit<FetchOptions, 'isServerFetch'>;
+import { type FetchOptions, type CustomFetchOptions } from './types';
 
 export const customFetch = (url: string, options?: CustomFetchOptions) => {
   const obj: RequestInit = {
@@ -35,22 +31,9 @@ export const customFetch = (url: string, options?: CustomFetchOptions) => {
 export const routeHandlerFetch = async (url: string, options?: FetchOptions) => {
   let fetchUrl = `/api${url.charAt(0) === '/' ? url : '/' + url}`;
 
-  if (options?.isServerFetch) {
-    fetchUrl = url;
-  }
-
   const response = await customFetch(fetchUrl, {
     ...options,
     cache: 'no-store',
   });
   return await response.json();
-}
-
-export const fetchFromServer = async (url: string, options?: CustomFetchOptions) => {
-  const serverFetchUrl = getApiPath(url);
-
-  return routeHandlerFetch(serverFetchUrl, {
-    ...options,
-    isServerFetch: true,
-  });
 }
