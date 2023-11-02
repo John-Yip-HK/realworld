@@ -4,13 +4,13 @@ import {
   customFetch,
 } from './customFetch';
 import { getAuthToken } from '../authCookieUtils';
-import { type FetchOptions } from './types';
+import { type FetchFromServerOptions } from './types';
 
-export const fetchFromServer = async (url: string, options?: FetchOptions) => {
+export const fetchFromServer = async (url: string, options?: FetchFromServerOptions) => {
   const defaultOptions = {
     isLoggedIn: true,
     ...structuredClone(options),
-  };
+  } satisfies FetchFromServerOptions;
   const serverFetchUrl = getApiPath(url);
   const authToken = getAuthToken();
 
@@ -24,5 +24,6 @@ export const fetchFromServer = async (url: string, options?: FetchOptions) => {
   }
 
   const response = await customFetch(serverFetchUrl, otherOptions);
+
   return response.json();
 }

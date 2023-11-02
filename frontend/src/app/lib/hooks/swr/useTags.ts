@@ -2,7 +2,7 @@ import useSWR, { type SWRResponse } from 'swr';
 
 import { TAGS_PATH } from '@/app/api/constants';
 
-import { routeHandlerFetch } from '../../api/customFetch';
+import { fetchFromClient } from '../../api/fetchFromClient';
 import { useAppStore } from '../../store/useAppStore';
 
 interface UseTagsResponse extends Pick<SWRResponse<GetTagsResponse>, 'isValidating'> {
@@ -14,7 +14,7 @@ export function useTags(): UseTagsResponse {
   const setTags = useAppStore(state => state.setTags);
   const resetTags = useAppStore(state => state.resetTags);
 
-  const { data, error, isValidating } = useSWR<GetTagsResponse, unknown>(TAGS_PATH, routeHandlerFetch, {
+  const { data, error, isValidating } = useSWR<GetTagsResponse, unknown>(TAGS_PATH, fetchFromClient, {
     revalidateOnFocus: false,
   });
 

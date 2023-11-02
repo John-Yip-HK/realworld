@@ -1,6 +1,6 @@
 import useSWR, { type SWRResponse } from 'swr';
 
-import { routeHandlerFetch } from '../../api/customFetch';
+import { fetchFromClient } from '../../api/fetchFromClient';
 
 import { ARTICLES_PATH } from '@/app/api/constants';
 import { ARTICLES_PER_PAGE, tabs } from '@/app/constants/profile';
@@ -30,7 +30,7 @@ export function useProfileArticles(username: string, selectedTab: string, pageNu
     error: getProfileArticlesError, 
     isLoading,
     ...otherProps
-  } = useSWR<GetArticlesResponse>(fetchUrl, routeHandlerFetch, {
+  } = useSWR<GetArticlesResponse>(fetchUrl, fetchFromClient, {
     revalidateOnFocus: false,
     dedupingInterval: 0,
   });
