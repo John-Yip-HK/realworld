@@ -28,7 +28,7 @@ export function useTags(): UseTagsResponse {
       };
     } else if ('errors' in data) {
       return {
-        error,
+        error: data.errors,
         isValidating,
       }
     }
