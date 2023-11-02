@@ -8,4 +8,4 @@ type UpdateUserBody = {
   };
 };
 
-type UpdateUserResponse = UserBody | ExpectedError;
+type UpdateUserResponse = UserBody | ResponseError;

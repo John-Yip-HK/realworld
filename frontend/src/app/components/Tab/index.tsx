@@ -1,6 +1,8 @@
 import { useRef, type KeyboardEventHandler, type MouseEventHandler } from 'react';
 import { clsx } from 'clsx';
 
+import { isEnterKeyPressed } from '@/app/lib/utils';
+
 import './styles.scss';
 
 type TabProps = {
@@ -23,7 +25,7 @@ export default function Tab({
   const anchorRef = useRef<HTMLAnchorElement>(null);
 
   const onFocusKeyDown: KeyboardEventHandler<HTMLLIElement> = (event) => {
-    if (event.code === 'Enter') {
+    if (isEnterKeyPressed(event)) {
       anchorRef.current?.click();
     }
   };

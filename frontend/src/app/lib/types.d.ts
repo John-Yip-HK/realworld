@@ -8,8 +8,8 @@ interface UnexpectedError {
 };
 
 type ServerError = string;
-type ExpectedError = UnauthorizedError | UnexpectedError;
-type ConduitApiError = ExpectedError | ServerError;
+type ResponseError = UnauthorizedError | UnexpectedError;
+type ConduitApiError = ResponseError | ServerError;
 
 interface UserCredentials {
   username: string;
@@ -27,4 +27,4 @@ type UserBody = {
   user: User;
 }
 
-type GetUserResponse = UserBody | Exclude<ConduitApiError, ServerError>;
+type GetUserResponse = UserBody | ResponseError;

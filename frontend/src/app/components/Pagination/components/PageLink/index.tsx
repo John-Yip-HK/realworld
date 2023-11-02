@@ -6,6 +6,8 @@ import {
   useRef,
 } from 'react';
 
+import { isEnterKeyPressed } from '@/app/lib/utils';
+
 import './styles.scss';
 
 type ClickEvent = Parameters<MouseEventHandler<HTMLAnchorElement>>[0];
@@ -31,7 +33,7 @@ export default function PageLink({
   };
 
   const onFocusKeyDown: KeyboardEventHandler<HTMLAnchorElement> = (event) => {
-    if (event.code === 'Enter') {
+    if (isEnterKeyPressed(event)) {
       anchorRef.current?.click();
     }
   };

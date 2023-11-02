@@ -4,6 +4,8 @@ import {
   type KeyboardEventHandler
 } from 'react';
 
+import { isEnterKeyPressed } from '@/app/lib/utils';
+
 import './styles.scss';
 
 type TagProps = {
@@ -18,7 +20,7 @@ export default function Tag({
   const tagRef = useRef<HTMLAnchorElement>(null);
 
   const onFocusKeyDown: KeyboardEventHandler<HTMLAnchorElement> = (event) => {
-    if (event.code === 'Enter') {
+    if (isEnterKeyPressed(event)) {
       tagRef.current?.click();
     }
   }
