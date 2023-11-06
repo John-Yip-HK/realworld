@@ -47,6 +47,7 @@ export function useArticles(isLoggedIn: boolean): UseArticlesResponse {
 
   const { data: articleResponse, error: getArticleError, isLoading, ...otherProps } = getArticles;
   const { isValidating } = otherProps;
+  let specificProps = {};
 
   if (articleResponse && !isValidating) {
     const isServerError = typeof articleResponse === 'string';
@@ -54,41 +55,40 @@ export function useArticles(isLoggedIn: boolean): UseArticlesResponse {
     if (!isServerError && 'articles' in articleResponse) {
       setNumArticles(articleResponse.articlesCount);
 
-      return {
+      specificProps = {
         articles: articleResponse.articles,
-        ...otherProps,
       };
     }
-
-    setNumArticles(0);
-
-    if (isServerError) {
-      return {
-        error: articleResponse,
-        ...otherProps,
+    else {
+      setNumArticles(0);
+  
+      if (isServerError) {
+        specificProps = {
+          error: articleResponse,
+        }
       }
-    }
-    else if ('errors' in articleResponse) {
-      return {
-        error: articleResponse.errors,
-        ...otherProps,
+      else if ('errors' in articleResponse) {
+        specificProps = {
+          error: articleResponse.errors,
+        }
       }
-    }
-    else if ('status' in articleResponse) {
-      return {
-        error: articleResponse.message,
-        ...otherProps,
+      else if ('status' in articleResponse) {
+        specificProps = {
+          error: articleResponse.message,
+        }
       }
     }
   }
   else if (getArticleError) {
-    return {
+    specificProps = {
       error: getArticleError,
-      ...otherProps,
     }
   } else {
     setNumArticles(0);
   }
 
-  return otherProps;
+  return {
+    ...specificProps,
+    ...otherProps,
+  };
 }

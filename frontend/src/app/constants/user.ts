@@ -6,6 +6,7 @@ export const UNKNOWN_ERROR_OBJECT = {
 export const SIGN_UP_PATH = '/register';
 export const USERS_PATH = '/users';
 export const LOGIN_PATH = USERS_PATH + '/login';
+export const LOGIN_NAV_PATH = '/login';
 export const USER_PATH = USERS_PATH.slice(0, -1);
 
 export const DUMMY_USER_OBJECT = {

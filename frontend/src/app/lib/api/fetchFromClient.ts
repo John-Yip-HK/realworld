@@ -1,6 +1,9 @@
 import { getRouteHandlerPath } from '@/app/api/utils';
+
 import { customFetch } from './customFetch';
 import { type FetchOptions } from './types';
+
+import { NO_CONTENT_STATUS_CODE } from '@/app/api/constants';
 
 /**
  * Fetches data from the client using the provided URL and options.
@@ -14,5 +17,9 @@ export const fetchFromClient = async (url: string, options?: FetchOptions) => {
     clientHasAuth: options?.isLoggedIn,
   });
 
+  if (response.status === NO_CONTENT_STATUS_CODE) {
+    return undefined;
+  }
+  
   return await response.json();
 }

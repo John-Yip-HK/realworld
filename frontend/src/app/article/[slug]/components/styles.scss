@@ -1,0 +1,56 @@
+@import '../../../globals.scss';
+
+.following-user {
+  background-color: #fff;
+  color: #373a3c;
+}
+
+.article-favorited {
+  color: #fff;
+  background-color: #5cb85c;
+  border-color: #5cb85c;
+}
+
+.mutating-status {
+  cursor: not-allowed;
+}
+
+.delete-bin-float-right {
+  float: right;
+  color: #333;
+  font-size: 1rem;
+  border: 0px;
+  background-color: transparent;
+
+  &.disable-btn {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.waving-hand {
+
+  animation: wave 1s infinite;
+}
+
+@keyframes wave {
+  0%, 100% {
+    transform: rotate(20deg);
+  }
+  50% {
+    transform: rotate(-20deg);
+  }
+}

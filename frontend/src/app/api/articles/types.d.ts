@@ -10,12 +10,7 @@ interface Article {
   updatedAt: string;
   favorited: boolean;
   favoritesCount: number;
-  author: {
-    username: string;
-    bio: string;
-    image: string;
-    following: boolean;
-  }
+  author: ArticleAuthor;
 };
 
 interface GetArticlesSuccessResponse {
@@ -25,3 +20,5 @@ interface GetArticlesSuccessResponse {
 type GetArticlesErrorResponse = ConduitApiError;
 
 type GetArticlesResponse = GetArticlesErrorResponse | GetArticlesSuccessResponse;
+
+type DeleteArticleResponse = void | GetArticlesErrorResponse;

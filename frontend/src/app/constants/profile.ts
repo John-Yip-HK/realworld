@@ -1,4 +1,6 @@
 export const ARTICLES_PER_PAGE = 5;
+export const PROFILES_PATH = '/profiles';
+export const PROFILE_NAV_PATH = '/profile';
 
 export const tabs = [
   {

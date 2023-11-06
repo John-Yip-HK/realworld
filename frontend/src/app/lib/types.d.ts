@@ -1,6 +1,6 @@
-interface UnauthorizedError {
-  status: "error";
-  message: "missing authorization credentials";
+type UnauthorizedError = {
+  status: "error",
+  message: "missing authorization credentials",
 };
 
 interface UnexpectedError {
@@ -28,3 +28,10 @@ type UserBody = {
 }
 
 type GetUserResponse = UserBody | ResponseError;
+
+interface ArticleAuthor {
+  username: string;
+  bio: string;
+  image: string;
+  following: boolean;
+}

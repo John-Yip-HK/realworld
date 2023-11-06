@@ -7,4 +7,7 @@ interface CreateArticleBody {
   }
 }
 
-type CreateArticleResponse = Article | ResponseError;
+type UpdateArticleBody = CreateArticleBody;
+
+type CreateArticleResponse = { article: Article } | ResponseError;
+type UpdateArticleResponse = CreateArticleResponse;

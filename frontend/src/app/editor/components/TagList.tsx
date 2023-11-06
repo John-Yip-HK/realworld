@@ -1,10 +1,17 @@
-import { type KeyboardEventHandler, useState, Fragment } from 'react'
+import { type KeyboardEventHandler, useState, Fragment, useEffect } from 'react'
 
 import { isEnterKeyPressed } from '@/app/lib/utils';
 
 import './styles.scss';
 
-export default function TagList() {
+interface TagListProps {
+  defaultValue: string[];
+}
+
+export default function TagList({
+  defaultValue
+}: TagListProps) {
+  const hasDefaultValue = defaultValue.length > 0;
   const [enteredTags, setEnteredTags] = useState<string[]>([]);
   
   const handleEnterPress: KeyboardEventHandler<HTMLInputElement> = (event) => {
@@ -24,10 +31,23 @@ export default function TagList() {
   const onClickTagPill = (tagName: string) => () => {
     setEnteredTags((prevEnteredTags) => prevEnteredTags.filter(tag => tag !== tagName));
   };
+
+  useEffect(() => {
+    if (hasDefaultValue) {
+      setEnteredTags(defaultValue);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   
   return (
     <fieldset className="form-group">
-      <input type="text" className="form-control" placeholder="Enter tags" onKeyDown={handleEnterPress} />
+      <input 
+        type="text" 
+        className="form-control" 
+        placeholder="Enter tags" 
+        onKeyDown={handleEnterPress} 
+      />
       {
         enteredTags.length > 0 ?
           (

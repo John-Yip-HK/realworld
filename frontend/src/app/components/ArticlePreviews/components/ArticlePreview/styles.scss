@@ -1,0 +1,12 @@
+@import '../../../../globals.scss';
+
+.btn-disabled {
+  cursor: not-allowed;
+  opacity: .65;
+}
+
+.btn-liked {
+  color: #fff;
+  background-color: #5cb85c;
+  border-color: #5cb85c;
+}

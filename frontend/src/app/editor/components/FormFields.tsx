@@ -5,29 +5,46 @@ import Textarea from '@/app/components/Textarea';
 
 import TagList from './TagList';
 
-export default function FormFields() {
-  const { pending: creatingArticle } = useFormStatus();
+interface FormFieldsProps {
+  formDefaultValues?: FormDefaultValues;
+}
+
+export default function FormFields({
+  formDefaultValues
+}: FormFieldsProps) {
+  const { pending: mutatingArticle } = useFormStatus();
+  let title: Article['title'] = '';
+  let description: Article['description'] = '';
+  let body: Article['body'] = '';
+  let tagList: Article['tagList'] = [];
+
+  if (formDefaultValues) {
+    ({ title, description, body, tagList } = formDefaultValues);
+  }
   
   return (
-    <fieldset disabled={creatingArticle}>
+    <fieldset disabled={mutatingArticle}>
       <Input
         id="title"
-        placeholder="Article Title"
+        placeholder="Title"
+        defaultValue={title}
       />
       <Input
         id="description"
         size="md"
-        placeholder="What's this article about?"
+        placeholder="Description: What's this article about?"
+        defaultValue={description}
       />
       <Textarea
         id="body"
         size="md"
         rows={8}
-        placeholder="Write your article (in markdown)"
+        placeholder="Body: Write your article (in markdown)"
+        defaultValue={body}
       />
-      <TagList />
+      <TagList defaultValue={tagList} />
       <button className="btn btn-lg pull-xs-right btn-primary" type="submit">
-        Publish Article
+        {formDefaultValues ? 'Update' : 'Publish'} Article
       </button>
     </fieldset>
   )
