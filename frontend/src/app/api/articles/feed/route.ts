@@ -1,11 +1,10 @@
-import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
 import { getApiPath, setAuthorizationHeader } from '../../utils';
 import { extractResponseInfo } from '@/app/lib/api/handleResponse';
 
 import { ARTICLES_FEED_PATH } from '../../constants';
-import { TOKEN_COOKIE_NAME } from '@/app/constants/user';
+import { getAuthToken } from '@/app/lib/authCookieUtils';
 
 export async function GET(request: Request) {
   const { headers, url } = request;
@@ -14,10 +13,8 @@ export async function GET(request: Request) {
 
   const fetchUrl = getApiPath(ARTICLES_FEED_PATH) + (hasSearchParams ? `?${searchParams.toString()}` : '');
 
-  headers.delete('host');
-
-  const token = cookies().get(TOKEN_COOKIE_NAME);
-  setAuthorizationHeader(headers, token?.value);
+  const authToken = getAuthToken();
+  setAuthorizationHeader(headers, authToken);
 
   const getArticlesResponse = await fetch(fetchUrl, {
     headers,

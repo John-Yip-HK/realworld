@@ -1,6 +1,6 @@
 import { getRouteHandlerPath } from '@/app/api/utils';
 import { customFetch } from './customFetch';
-import { type FetchFromClientOptions } from './types';
+import { type FetchOptions } from './types';
 
 /**
  * Fetches data from the client using the provided URL and options.
@@ -8,8 +8,11 @@ import { type FetchFromClientOptions } from './types';
  * @param options - Optional fetch options.
  * @returns A Promise that resolves to the fetched data.
  */
-export const fetchFromClient = async (url: string, options?: FetchFromClientOptions) => {
-  const response = await customFetch(getRouteHandlerPath(url), options);
+export const fetchFromClient = async (url: string, options?: FetchOptions) => {
+  const response = await customFetch(getRouteHandlerPath(url), {
+    ...options,
+    clientHasAuth: options?.isLoggedIn,
+  });
 
   return await response.json();
 }

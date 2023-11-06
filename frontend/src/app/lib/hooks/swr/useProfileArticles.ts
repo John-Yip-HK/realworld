@@ -11,7 +11,7 @@ interface UseProfileArticles extends
       error?: ErrorMessages | unknown;
     }
 
-export function useProfileArticles(username: string, selectedTab: string, pageNum: number): UseProfileArticles {
+export function useProfileArticles(username: string, selectedTab: string, pageNum: number, isLoggedIn: boolean): UseProfileArticles {
   const searchParams = new URLSearchParams();
   searchParams.set('limit', `${ARTICLES_PER_PAGE}`);
   searchParams.set('offset', `${pageNum * ARTICLES_PER_PAGE}`);
@@ -30,10 +30,18 @@ export function useProfileArticles(username: string, selectedTab: string, pageNu
     error: getProfileArticlesError, 
     isLoading,
     ...otherProps
-  } = useSWR<GetArticlesResponse>(fetchUrl, fetchFromClient, {
-    revalidateOnFocus: false,
-    dedupingInterval: 0,
-  });
+  } = useSWR<GetArticlesResponse, unknown, [string, boolean]>([fetchUrl, isLoggedIn], 
+    ([fetchUrl, isLoggedIn]) => fetchFromClient(
+      fetchUrl,
+      {
+        isLoggedIn,
+      }
+    ), 
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 0,
+    }
+  );
   const { isValidating } = otherProps;
 
   if (profileArticlesResponse && !isValidating) {

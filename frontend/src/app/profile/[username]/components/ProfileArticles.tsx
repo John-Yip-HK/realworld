@@ -26,7 +26,7 @@ export default function ProfileArticles({
     articles = [], 
     error,
     articlesCount = 0, 
-  } = useProfileArticles(username, selectedTab, currentPage);
+  } = useProfileArticles(username, selectedTab, currentPage, isLoggedIn);
 
   const onTabClick = (linkName: string): MouseEventHandler<HTMLAnchorElement> => (event) => {
     event.preventDefault();

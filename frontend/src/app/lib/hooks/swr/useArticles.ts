@@ -33,10 +33,17 @@ export function useArticles(isLoggedIn: boolean): UseArticlesResponse {
   const baseFetchUrl = isLoggedIn && selectedTab === YOUR_FEED_LINK_NAME ? ARTICLES_FEED_PATH : ARTICLES_PATH;
   const fetchUrl = `${baseFetchUrl}?${searchParams.toString()}`;
 
-  const getArticles = useSWR<ExpectedResponse>(fetchUrl, fetchFromClient, {
-    revalidateOnFocus: false,
-    dedupingInterval: 0,
-  });
+  const getArticles = useSWR<ExpectedResponse, unknown, [string, boolean]>(
+    [fetchUrl, isLoggedIn], 
+    ([fetchUrl, isLoggedIn]) => fetchFromClient(
+      fetchUrl,
+      { isLoggedIn, }
+    ), 
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 0,
+    }
+  );
 
   const { data: articleResponse, error: getArticleError, isLoading, ...otherProps } = getArticles;
   const { isValidating } = otherProps;

@@ -6,3 +6,5 @@ export const DEFAULT_HEADERS: HeadersInit = {
   'accept': 'application/json',
   'Content-Type': 'application/json',
 };
+
+export const CLIENT_NEEDS_AUTH_HEADER_KEY = 'Client-Needs-Auth';

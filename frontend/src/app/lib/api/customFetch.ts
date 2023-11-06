@@ -1,6 +1,10 @@
-import { DEFAULT_HEADERS } from "@/app/api/constants";
+import { CLIENT_NEEDS_AUTH_HEADER_KEY, DEFAULT_HEADERS } from "@/app/api/constants";
 
-import { type CustomFetchOptions } from './types';
+import { type FetchOptions } from './types';
+
+interface CustomFetchOptions extends Omit<FetchOptions, 'isLoggedIn'> {
+  clientHasAuth?: boolean
+}
 
 /**
  * Sends a custom fetch request to the specified URL with the given options.
@@ -18,7 +22,7 @@ export const customFetch = (url: string, options?: CustomFetchOptions) => {
   };
 
   if (options) {
-    const { body, headers, ...otherOptions } = options;
+    const { body, headers, clientHasAuth, ...otherOptions } = options;
 
     if (body) {
       obj.body = JSON.stringify(body);
@@ -27,6 +31,12 @@ export const customFetch = (url: string, options?: CustomFetchOptions) => {
       obj.headers = {
         ...obj.headers,
         ...headers,
+      }
+    }
+    if (clientHasAuth) {
+      obj.headers = {
+        ...obj.headers,
+        [CLIENT_NEEDS_AUTH_HEADER_KEY]: `${clientHasAuth}`,
       }
     }
 
