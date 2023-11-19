@@ -1,3 +1,6 @@
+import { FaRegEdit } from "react-icons/fa";
+import { IoSettingsOutline } from "react-icons/io5";
+
 import NavLink from './NavLink';
 
 import './styles.scss';
@@ -24,12 +27,24 @@ const links: NavLinkProps[] = [
   },
   {
     href: '/editor',
-    children: ' New Article',
+    children: (
+      <nav className="nav-link--with-icon">
+        <FaRegEdit />
+        &nbsp;
+        New Article
+      </nav>
+    ),
     protectedLink: true,
   },
   {
     href: '/settings',
-    children: ' Settings',
+    children: (
+      <nav className="nav-link--with-icon">
+        <IoSettingsOutline />
+        &nbsp;
+        <span>Settings</span>
+      </nav>
+    ),
     protectedLink: true,
   },
 ];

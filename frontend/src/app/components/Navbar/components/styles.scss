@@ -1,3 +1,14 @@
-.nav-link--hidden {
-  display: none !important;
+.nav-link {
+  &--hidden {
+    display: none !important;
+  }
+
+  &--with-icon {
+    display: inline-flex;
+    align-items: center;
+
+    > svg {
+      font-size: 1.3rem;
+    }
+  }
 }
