@@ -1,11 +1,8 @@
 'use client';
 
-import { type KeyboardEventHandler } from 'react';
 import { useFormState } from 'react-dom';
 
 import { createArticleServerAction, updateArticleServerAction } from '@/app/lib/server-actions/editor';
-
-import { isEnterKeyPressed } from '../../lib/utils';
 
 import FormFields from './FormFields';
 
@@ -29,14 +26,10 @@ export default function EditorFormContainer({
 
   const errors = (mutatePostState as Partial<UnexpectedError>)?.errors || (mutatePostState as UnauthorizedError) || undefined;
   
-  const preventSubmitFormByEnter: KeyboardEventHandler<HTMLFormElement> = (event) => {
-    if (isEnterKeyPressed(event)) event.preventDefault();
-  }
-  
   return (
     <>
       <Errors errors={errors} />
-      <form action={formAction} onKeyDown={preventSubmitFormByEnter}>
+      <form action={formAction}>
         <input type="hidden" value={username} name="username" />
         {
           formDefaultValues ? 

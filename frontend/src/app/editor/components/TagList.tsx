@@ -19,10 +19,13 @@ export default function TagList({
 
     if (
       isEnterKeyPressed(event) && 
-      Boolean(value) && 
-      !enteredTags.includes(value)
+      Boolean(value)
     ) {
-      setEnteredTags((prevEnteredTags) => prevEnteredTags.concat(value));
+      event.preventDefault();
+
+      if (!enteredTags.includes(value)) {
+        setEnteredTags((prevEnteredTags) => prevEnteredTags.concat(value.trim()));
+      }
 
       event.currentTarget.value = '';
     }
