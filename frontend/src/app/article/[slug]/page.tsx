@@ -11,10 +11,12 @@ type ArticleProps = {
 };
 
 export default async function Article({ params: { slug } }: ArticleProps) {
-  const { article, isLoggedIn } = await serverFetchArticle(slug);
-  const { comments } = await serverFetchArticleComments(slug);
+  const [{ article, isLoggedIn }, { comments }] = await Promise.all([
+    serverFetchArticle(slug), 
+    serverFetchArticleComments(slug)
+  ]);
 
-  let user: User = { 
+  let user: User = {
     username: '',
     email: '',
     token: '',
