@@ -1,6 +1,14 @@
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
 import { IoSettingsOutline } from "react-icons/io5";
+
+import SharedStatesProvider from '@/app/lib/article/SharedStatesProvider';
+
+import FollowUserBtn from './FollowUserBtn';
+
+import './styles.scss';
 
 type UserInfoProps = {
   profile: Profile;
@@ -11,7 +19,7 @@ export default function UserInfo({
   profile,
   isProfileOfUser,
 }: UserInfoProps) {
-  const { bio, image: imageUrl, username, } = profile;
+  const { bio, image: imageUrl, username, following } = profile;
   
   return (
     <div className="user-info">
@@ -29,19 +37,20 @@ export default function UserInfo({
             <p>{bio ?? 'This user does not have bio'}</p>
             {
               !isProfileOfUser ? 
-                <button className="btn btn-sm btn-outline-secondary action-btn">
-                  <i className="ion-plus-round"></i>
-                  &nbsp; Follow {username}
-                </button> :
-                null
-            }
-            {
-              isProfileOfUser ? 
+                <SharedStatesProvider
+                  initFollowing={following}
+                  initFavoriteStates={{
+                    slug: '', 
+                    favorited: false, 
+                    favoritesCount: 0,
+                  }}
+                >
+                  <FollowUserBtn username={username} />
+                </SharedStatesProvider> :
                 <Link href="/settings" className="btn btn-sm btn-outline-secondary action-btn">
                   <IoSettingsOutline />
                   &nbsp; Edit Profile Settings
-                </Link> :
-                null
+                </Link>
             }
           </div>
         </div>

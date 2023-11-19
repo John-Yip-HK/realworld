@@ -10,6 +10,7 @@ import { fetchFromClient } from '@/app/lib/api/fetchFromClient';
 import { SharedStatesContext } from '@/app/lib/article/SharedStatesProvider';
 
 import { ARTICLES_PATH } from '@/app/api/constants';
+import { ARTICLE_NAV_PATH } from '@/app/constants/article';
 
 import './styles.scss';
 
@@ -26,7 +27,7 @@ export default function OutlinedButtons({
   isLoggedIn,
   articleProps,
 }: OutlinedButtonsProps) {
-  const { username, slug, } = articleProps;
+  const { username, slug } = articleProps;
 
   const router = useRouter();
 
@@ -77,7 +78,7 @@ export default function OutlinedButtons({
         } else {
           setMutatingFollowStatus(true);
           mutateOptimisticFollowStatus(followingUser);
-          await followUserServerAction(username, slug, followingUser);
+          await followUserServerAction(username, followingUser, path.join(ARTICLE_NAV_PATH, slug));
           setMutatingFollowStatus(false);
         }
       },

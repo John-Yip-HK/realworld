@@ -38,14 +38,15 @@ export default async function ProfilePage({ params: { username } }: ProfilePageP
   }
 
   const userIsViewingOwnProfile = userResponse?.user.username === username;
+  const { profile } = profileResponse
 
   return (
     <div className="profile-page">
       <UserInfo 
-        profile={profileResponse.profile} 
+        profile={profile} 
         isProfileOfUser={userIsViewingOwnProfile} 
       />
-      <ProfileArticles isLoggedIn={isLoggedIn} username={username} />
+      <ProfileArticles isLoggedIn={isLoggedIn} username={profile.username} />
     </div>
   )
 }

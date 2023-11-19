@@ -11,7 +11,7 @@ import { PROFILES_PATH } from '@/app/constants/profile';
 import { ARTICLES_PATH } from '@/app/api/constants';
 import { ARTICLE_NAV_PATH } from '@/app/constants/article';
 
-export async function followUserServerAction(username: string, articleSlug: string, following: boolean) {
+export async function followUserServerAction(username: string, following: boolean, revalidateLink?: string) {
   const encodedUsername = encodeURIComponent(username);
   const requestUrl = path.join(PROFILES_PATH, encodedUsername, 'follow');
 
@@ -19,7 +19,9 @@ export async function followUserServerAction(username: string, articleSlug: stri
     method: following ? 'DELETE' : 'POST',
   });
 
-  revalidatePath(path.join(ARTICLE_NAV_PATH, articleSlug));
+  if (revalidateLink) {
+    revalidatePath(revalidateLink);
+  }
 }
 
 export async function favoriteArticleServerAction(articleSlug: string, favorited: boolean, pathToRevalidate?: string) {

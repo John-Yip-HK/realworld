@@ -1,14 +1,14 @@
 'use client';
 
-import { MouseEventHandler, useState } from 'react';
+import { type MouseEventHandler, useState } from 'react';
 
 import Tab from '@/app/components/Tab';
 import TabContainer from '@/app/components/TabContainer';
 import { useProfileArticles } from '@/app/lib/hooks/swr/useProfileArticles';
-
-import { ARTICLES_PER_PAGE, tabs } from '@/app/constants/profile';
 import Pagination from '@/app/components/Pagination';
 import ArticlePreviews from '@/app/components/ArticlePreviews';
+
+import { ARTICLES_PER_PAGE, tabs } from '@/app/constants/profile';
 
 type ProfileArticlesProps = {
   isLoggedIn: boolean;

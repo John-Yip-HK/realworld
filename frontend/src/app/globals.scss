@@ -2,3 +2,12 @@
   display: inline-flex;
   align-items: center;
 }
+
+@mixin follow-user-styles {
+  background-color: #fff;
+  color: #373a3c;
+}
+
+@mixin cursor-not-allowed {
+  cursor: not-allowed;
+}
