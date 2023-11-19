@@ -1,11 +1,12 @@
+@import '../../../globals.scss';
+
 .nav-link {
   &--hidden {
     display: none !important;
   }
 
   &--with-icon {
-    display: inline-flex;
-    align-items: center;
+    @include vertical-align-items;
 
     > svg {
       font-size: 1.3rem;

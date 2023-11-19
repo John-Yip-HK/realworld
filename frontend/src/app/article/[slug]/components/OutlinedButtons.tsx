@@ -1,7 +1,7 @@
 import { useRouter } from 'next/navigation';
 import { clsx } from 'clsx';
 import { AiFillHeart, AiOutlinePlus, AiOutlineMinus } from 'react-icons/ai';
-import { useContext, useOptimistic, useState } from 'react';
+import { useContext } from 'react';
 import path from 'path';
 
 import OutlinedButton, { type OutlinedButtonProps } from '@/app/components/OutlinedButton';
@@ -131,7 +131,7 @@ export default function OutlinedButtons({
     shouldShow ?
       <>
         <OutlinedButton
-          className={clsx('vertical-align-items', className)}
+          className={clsx('btn-caption-with-icon', className)}
           size="sm"
           key={key}
           {...buttonProps}

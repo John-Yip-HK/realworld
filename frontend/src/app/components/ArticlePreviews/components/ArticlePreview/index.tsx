@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { AiFillHeart } from 'react-icons/ai';
 import useSWRMutation from 'swr/mutation';
+import Image from 'next/image';
 
 import { favoriteArticleServerAction } from '@/app/lib/server-actions/article';
 import { getLocaleString } from '@/app/lib/utils';
@@ -11,7 +12,6 @@ import { getLocaleString } from '@/app/lib/utils';
 import { SIGN_UP_PATH } from '@/app/constants/user';
 
 import './styles.scss';
-import Image from 'next/image';
 
 interface ArticlePreviewProps {
   article: Article;
@@ -171,7 +171,7 @@ function LikeButton({
   return (
     <button 
       className={clsx(
-        'btn btn-outline-primary btn-sm pull-xs-right vertical-align-items',
+        'btn btn-outline-primary btn-sm pull-xs-right btn--like-article',
         isMutating ? 'btn-disabled' : undefined,
         favoriteStates.favorited ? 'btn-liked' : undefined,
       )}

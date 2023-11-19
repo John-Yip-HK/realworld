@@ -10,3 +10,7 @@
   background-color: #5cb85c;
   border-color: #5cb85c;
 }
+
+.btn--like-article {
+  @include vertical-align-items;
+}

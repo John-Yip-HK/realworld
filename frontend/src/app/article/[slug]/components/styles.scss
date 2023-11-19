@@ -15,6 +15,10 @@
   cursor: not-allowed;
 }
 
+.btn-caption-with-icon {
+  @include vertical-align-items;
+}
+
 .delete-bin-float-right {
   float: right;
   color: #333;
@@ -42,7 +46,6 @@
 }
 
 .waving-hand {
-
   animation: wave 1s infinite;
 }
 

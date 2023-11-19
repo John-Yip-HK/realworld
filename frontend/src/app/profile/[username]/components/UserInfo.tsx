@@ -1,4 +1,6 @@
 import Image from 'next/image';
+import Link from 'next/link';
+import { IoSettingsOutline } from "react-icons/io5";
 
 type UserInfoProps = {
   profile: Profile;
@@ -35,10 +37,10 @@ export default function UserInfo({
             }
             {
               isProfileOfUser ? 
-                <button className="btn btn-sm btn-outline-secondary action-btn">
-                  <i className="ion-gear-a"></i>
+                <Link href="/settings" className="btn btn-sm btn-outline-secondary action-btn">
+                  <IoSettingsOutline />
                   &nbsp; Edit Profile Settings
-                </button> :
+                </Link> :
                 null
             }
           </div>
