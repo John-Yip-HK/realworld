@@ -1,0 +1,9 @@
+export const BASE_TITLE = 'Conduit' as const;
+export const HOME_TITLE = 'Home' as const;
+export const LOGIN_TITLE = 'Sign In' as const;
+export const REGISTER_TITLE = 'Sign Up' as const;
+export const EDITOR_TITLE = 'New Article' as const;
+export const EDIT_ARTICLE_TITLE = 'Edit Article' as const;
+export const SETTINGS_TITLE = 'Settings' as const;
+export const PROFILE_TITLE = 'Profile' as const;
+export const ARTICLE_TITLE = 'Article' as const;

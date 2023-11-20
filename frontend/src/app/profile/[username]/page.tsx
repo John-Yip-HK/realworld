@@ -1,17 +1,46 @@
 import { fetchFromServer } from '@/app/lib/api/fetchFromServer';
 import { getProfileApiPath } from '@/app/lib/profile/utils';
 import { hasAuthCookie } from '@/app/lib/authCookieUtils';
+import { concatenateTitleDynamicBlock } from '@/app/lib/utils';
 
 import UserInfo from './components/UserInfo';
 import ProfileArticles from './components/ProfileArticles';
 
 import { USER_PATH } from '@/app/constants/user';
+import { PROFILE_TITLE } from '@/app/constants/title';
 
-interface ProfilePageProps {
+interface MetadataProps {
   params: {
     username: string;
   }
 };
+
+export async function generateMetadata({
+  params: { username }
+}: MetadataProps) {
+  let title: string = PROFILE_TITLE;
+  const isLoggedIn = hasAuthCookie();
+
+  try {
+    const getProfileResponse = await fetchFromServer<GetProfileResponse>(
+      getProfileApiPath(username),
+      { isLoggedIn }
+    );
+
+    if (
+        !(typeof getProfileResponse === 'string') &&
+        'profile' in getProfileResponse
+      ) {
+      title = concatenateTitleDynamicBlock(PROFILE_TITLE, getProfileResponse.profile.username);
+    }
+  } catch {}
+  
+  return {
+    title,
+  }
+}
+
+type ProfilePageProps = MetadataProps;
 
 export default async function ProfilePage({ params: { username } }: ProfilePageProps) {
   const isLoggedIn = hasAuthCookie();

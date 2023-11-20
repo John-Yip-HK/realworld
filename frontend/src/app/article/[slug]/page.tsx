@@ -1,14 +1,36 @@
 import { fetchFromServer } from '@/app/lib/api/fetchFromServer';
 import { serverFetchArticle } from '@/app/lib/article/serverFetchArticle';
 import { serverFetchArticleComments } from '@/app/lib/article/serverFetchArticleComments';
+import { concatenateTitleDynamicBlock } from '@/app/lib/utils';
 
 import ArticleContainer from './components/ArticleContainer';
 
 import { USER_PATH } from '@/app/constants/user';
+import { ARTICLE_TITLE } from '@/app/constants/title';
 
-type ArticleProps = {
+type MetadataProps = {
   params: { slug: string; };
 };
+
+export async function generateMetadata({
+  params: { slug }
+}: MetadataProps) {
+  let title: string = ARTICLE_TITLE;
+
+  try {
+    const { article } = await serverFetchArticle(slug);
+
+    if (article) {
+      title = concatenateTitleDynamicBlock(ARTICLE_TITLE, article.title);
+    }
+  } catch {}
+  
+  return {
+    title,
+  }
+}
+
+type ArticleProps = MetadataProps;
 
 export default async function Article({ params: { slug } }: ArticleProps) {
   const [{ article, isLoggedIn }, { comments }] = await Promise.all([

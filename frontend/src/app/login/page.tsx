@@ -1,9 +1,14 @@
-'use client';
-
+import { type Metadata } from 'next';
 import Link from "next/link";
 
 import LogInFormContainer from "./components/LogInFormContainer";
-import { loginServerAction } from "../lib/server-actions/auth";
+
+import { LOGIN_TITLE } from '../constants/title';
+import { SIGN_UP_PATH } from '../constants/user';
+
+export const metadata: Metadata = {
+  title: LOGIN_TITLE,
+}
 
 export default function LoginPage() {
   return (
@@ -13,9 +18,9 @@ export default function LoginPage() {
           <div className="col-md-6 offset-md-3 col-xs-12">
             <h1 className="text-xs-center">Sign in</h1>
             <p className="text-xs-center">
-              <Link href="/register">Need an account?</Link>
+              <Link href={SIGN_UP_PATH}>Need an account?</Link>
             </p>
-            <LogInFormContainer formServerAction={loginServerAction} />
+            <LogInFormContainer />
           </div>
         </div>
       </div>

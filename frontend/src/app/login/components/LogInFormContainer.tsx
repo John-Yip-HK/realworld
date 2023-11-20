@@ -1,5 +1,9 @@
+'use client';
+
 import Input from "@/app/components/Input";
 import { useFormState, useFormStatus } from "react-dom";
+
+import { loginServerAction } from '@/app/lib/server-actions/auth';
 
 interface LogInUserMessage {
   errors?: Record<string, string[]>;
@@ -7,14 +11,8 @@ interface LogInUserMessage {
 
 const initialMessage: LogInUserMessage = {};
 
-type LogInFormContainerProps = {
-  formServerAction: (prevState: LogInUserMessage, formData: FormData) => Promise<LogInUserMessage>,
-}
-
-export default function LogInFormContainer({
-  formServerAction,
-}: LogInFormContainerProps) {
-  const [logInState, formAction] = useFormState<typeof initialMessage, FormData>(formServerAction, initialMessage);
+export default function LogInFormContainer() {
+  const [logInState, formAction] = useFormState<typeof initialMessage, FormData>(loginServerAction, initialMessage);
 
   const errors = logInState?.errors;
 

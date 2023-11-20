@@ -1,9 +1,13 @@
-'use client';
-
+import { type Metadata } from 'next';
 import Link from 'next/link';
 
-import { signUpNewUserServerAction } from '../lib/server-actions/auth';
 import SignUpFormContainer from './components/SignUpFormContainer';
+
+import { REGISTER_TITLE } from '../constants/title';
+
+export const metadata: Metadata = {
+  title: REGISTER_TITLE,
+}
 
 export default function SignUpPage() {
   return (
@@ -15,7 +19,7 @@ export default function SignUpPage() {
             <p className="text-xs-center">
               <Link href="/login">Have an account?</Link>
             </p>
-            <SignUpFormContainer formServerAction={signUpNewUserServerAction} />
+            <SignUpFormContainer />
           </div>
         </div>
       </div>

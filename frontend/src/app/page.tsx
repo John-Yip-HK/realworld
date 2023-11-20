@@ -1,7 +1,10 @@
+import { type Metadata } from 'next';
+
 import MainPage from './components/MainPage';
 import MainPageBanner from './components/MainPage/components/MainPageBanner';
-
 import Tags from './components/Tags';
+
+export const metadata: Metadata = {}
 
 export default function HomePage() {
   return (

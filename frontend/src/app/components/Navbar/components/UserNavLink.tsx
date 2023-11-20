@@ -29,7 +29,7 @@ export default async function UserNavLink() {
             <>
               <Image 
                 alt={username !== '' ? `Image of ${username}` : 'Empty user image'} 
-                src={imageUrl} 
+                src={imageUrl}
                 className='user-pic'
                 width={26}
                 height={26}

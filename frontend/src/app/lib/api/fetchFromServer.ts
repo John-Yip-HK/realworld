@@ -6,7 +6,7 @@ import {
 import { getAuthToken } from '../authCookieUtils';
 import { type FetchOptions } from './types';
 
-export const fetchFromServer = async (url: string, options?: FetchOptions) => {
+export const fetchFromServer = async <ReturnType = any>(url: string, options?: FetchOptions) => {
   const defaultOptions = {
     isLoggedIn: true,
     ...structuredClone(options),
@@ -25,5 +25,5 @@ export const fetchFromServer = async (url: string, options?: FetchOptions) => {
 
   const response = await customFetch(serverFetchUrl, otherOptions);
 
-  return response.json();
+  return response.json() as ReturnType;
 }

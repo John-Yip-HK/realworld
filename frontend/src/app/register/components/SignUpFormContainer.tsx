@@ -1,7 +1,11 @@
+'use client';
+
 import { useFormState, useFormStatus } from 'react-dom';
 
 import Input from "@/app/components/Input";
 import { DUMMY_USER_OBJECT } from '@/app/constants/user';
+
+import { signUpNewUserServerAction } from '@/app/lib/server-actions/auth';
 
 interface SignUpUserMessage {
   errors?: Record<string, string[]>;
@@ -9,14 +13,8 @@ interface SignUpUserMessage {
 
 const initialMessage: SignUpUserMessage = {};
 
-interface SignUpFormContainerProps {
-  formServerAction: (prevState: SignUpUserMessage, formData: FormData) => Promise<SignUpUserMessage>,
-}
-
-export default function SignUpFormContainer({
-  formServerAction,
-}: SignUpFormContainerProps) {
-  const [signUpNewUserState, formAction] = useFormState<typeof initialMessage, FormData>(formServerAction, initialMessage);
+export default function SignUpFormContainer() {
+  const [signUpNewUserState, formAction] = useFormState<typeof initialMessage, FormData>(signUpNewUserServerAction, initialMessage);
 
   const errors = signUpNewUserState?.errors;
 
