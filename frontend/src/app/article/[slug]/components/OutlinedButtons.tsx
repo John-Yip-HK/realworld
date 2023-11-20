@@ -1,7 +1,7 @@
 import { useRouter } from 'next/navigation';
 import { clsx } from 'clsx';
 import { AiFillHeart, AiOutlinePlus, AiOutlineMinus } from 'react-icons/ai';
-import { useContext } from 'react';
+import { Fragment, useContext } from 'react';
 import path from 'path';
 
 import OutlinedButton, { type OutlinedButtonProps } from '@/app/components/OutlinedButton';
@@ -61,7 +61,7 @@ export default function OutlinedButtons({
 
   const outlinedButtons: (OutlinedButtonProps & {
     shouldShow: boolean;
-    key: string;
+    readonly key: string;
   })[] = [
     {
       key: 'follow',
@@ -130,11 +130,10 @@ export default function OutlinedButtons({
   
   return outlinedButtons.map(({ shouldShow, key, className, ...buttonProps }, index) => (
     shouldShow ?
-      <>
+      <Fragment key={key}>
         <OutlinedButton
           className={clsx('btn-caption-with-icon', className)}
           size="sm"
-          key={key}
           {...buttonProps}
         />
         {index < outlinedButtons.length - 1 ? 
@@ -143,7 +142,7 @@ export default function OutlinedButtons({
           </> :
           null
         }
-      </> :
+      </Fragment> :
       null
   ));
 }
