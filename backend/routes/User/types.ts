@@ -1,13 +1,13 @@
 interface User {
-  user: {
-    email: string;
-    token: string;
-    username: string;
-    bio: string;
-    image: Nullable<string>;
-  }
+  email: string;
+  token: string;
+  username: string;
+  bio: string;
+  image: Nullable<string>;
+}
+
+interface UserResponse {
+  user: User;
 };
 
-export {
-  User,
-}
+export { User, UserResponse }

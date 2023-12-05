@@ -1,10 +1,10 @@
 import { Router } from 'express';
 
-import type { User } from './types';
+import type { UserResponse } from './types';
 
 const userRouter = Router();
 
-const user: User = {
+const user: UserResponse = {
   user: {
     email: 'jake@jake.jake',
     token: 'jwt.token.here',
@@ -14,7 +14,7 @@ const user: User = {
   }
 };
 
-userRouter.get('/', (req, res) => {
+userRouter.get< , , UserResponse>('/', (req, res) => {
   res.send(user);
 });
 

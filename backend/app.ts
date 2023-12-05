@@ -2,14 +2,18 @@ import path from 'node:path';
 
 import express from 'express';
 
-import { userRouter } from './routes/User';
+import { userRouter, usersRouter } from './routes/User';
 import { tagsRouter } from './routes/Tags';
 
 const app = express();
 const port = 8080;
 const BASE_PATH = '/api';
 
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 app.use(path.join(BASE_PATH, '/user'), userRouter);
+app.use(path.join(BASE_PATH, '/users'), usersRouter);
 app.use(path.join(BASE_PATH, '/tags'), tagsRouter);
 
 app.listen(port, () => {
