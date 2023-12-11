@@ -6,8 +6,12 @@ interface User {
   image: Nullable<string>;
 }
 
+interface UserCredentials extends Pick<User, 'email' | 'username'> {
+  password: string;
+}
+
 interface UserResponse {
   user: User;
 };
 
-export { User, UserResponse }
+export { User, UserResponse, UserCredentials }

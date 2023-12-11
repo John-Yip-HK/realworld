@@ -1,14 +1,9 @@
 import { Router } from 'express';
 
+import { registerUserController } from '../../controllers/users';
+
 const usersRouter = Router();
 
-usersRouter.post< , , {}, { user: {
-  email: string;
-  password: string;
-} }>('/login', (req, res) => {
-  const { user: { email, password }, } = req.body;
-
-  res.send({ email, password });
-});
+usersRouter.post('/', registerUserController);
 
 export { usersRouter };
