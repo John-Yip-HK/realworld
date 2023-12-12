@@ -1,14 +1,18 @@
 import { Request, Response } from 'express';
+import { PrismaClient } from '@prisma/client';
+
+import { hashPassword } from '../utils/passwordUtils';
 
 import statusCodes from '../constants/status-codes';
-import { type UserCredentials } from '../routes/User';
+
+const prisma = new PrismaClient();
 
 /**
  * Registers a new user.
  * 
- * @param {Request} req - The request object.
- * @param {Response} res - The response object.
- * @returns {Promise<void>} A promise that resolves when the user is registered successfully.
+ * @param req - The request object.
+ * @param res - The response object.
+ * @returns A Promise that resolves to the response status.
  */
 async function registerUserController(req: Request, res: Response) {
   const { user: { email, username, password } } = req.body;
@@ -28,34 +32,35 @@ async function registerUserController(req: Request, res: Response) {
   
   try {
     // Check if user already exists in the database
-    // const userExistsQuery = `
-    //   SELECT * FROM users 
-    //   WHERE email = $1
-    // `;
-    // const userExistsResult = await dbQuery(userExistsQuery, [email]);
+    const userExistsResult = await prisma.users.findUnique({
+      where: {
+        email,
+      }
+    });
 
-    // if (userExistsResult.length > 0) {
-    //   return res.status(400).send({
-    //     error: 'User already exists',
-    //     user: { email, username, password },
-    //   });
-    // }
+    if (userExistsResult) {
+      return res.status(statusCodes.BAD_REQUEST.code).send({
+        error: 'User already exists',
+        user: { email, username, password },
+      });
+    }
 
-    // const hashedPassword = await hashPassword(password);
-    // // Insert new user into the database
-    // const insertUserQuery = `
-    //   INSERT INTO users (email, username, hashed_password) 
-    //   VALUES ($1, $2, $3)
-    // `;
-    // await dbQuery(insertUserQuery, [email, username, hashedPassword]);
+    const hashedPassword = await hashPassword(password);
+    await prisma.users.create({
+      data: { email, username, hashedPassword }
+    });
 
-    return res.sendStatus(statusCodes.CREATED.code);
+    return res.status(statusCodes.CREATED.code).send({
+      user: {
+        email, username,
+      }
+    });
   } catch (error) {
     console.error(error);
     return res.status(statusCodes.INTERNAL_SERVER_ERROR.code).send({
       error: 'Cannot register user',
       user: { email, username, password },
-      originalError: error,
+      stack: error,
     });
   }
 }
