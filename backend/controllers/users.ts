@@ -1,9 +1,13 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 
-import { hashPassword } from '../utils/passwordUtils';
+import { comparePassword, hashPassword } from '../utils/passwordUtils';
 
 import statusCodes from '../constants/status-codes';
+import { DEFAULT_IMAGE_URL } from '../constants/users';
+import { signJwtToken } from '../utils/jwtUtils';
+
+import type { ErrorsObj, UserCredentials, UserResponse } from '../routes/User';
 
 const prisma = new PrismaClient();
 
@@ -14,55 +18,154 @@ const prisma = new PrismaClient();
  * @param res - The response object.
  * @returns A Promise that resolves to the response status.
  */
-async function registerUserController(req: Request, res: Response) {
+async function registerUserController(
+  req: Request<
+    void, 
+    UserResponse, 
+    { user: UserCredentials, }
+  >, 
+  res: Response<UserResponse>
+) {
   const { user: { email, username, password } } = req.body;
+  const errorsObj: ErrorsObj = {};
 
   if (!email || !username || !password) {
-    const missingFields = [];
+    const errorMsg = ['can\'t be blank'];
 
-    if (!email) { missingFields.push('email') }
-    if (!username) { missingFields.push('username') }
-    if (!password) { missingFields.push('password') }
+    if (!email) { errorsObj.email = errorMsg; }
+    else if (!username) { errorsObj.username = errorMsg; }
+    else if (!password) { errorsObj.password = errorMsg; }
     
     return res.status(statusCodes.BAD_REQUEST.code).send({
-      error: 'Missing fields',
-      missingFields,
+      errors: errorsObj,
     });
   }
   
   try {
-    // Check if user already exists in the database
-    const userExistsResult = await prisma.users.findUnique({
-      where: {
-        email,
-      }
-    });
+    const [userExistsWithSameEmail, userExistsWithSameUsername] = await Promise.all([
+      prisma.users.findUnique({
+        where: {
+          email,
+        }
+      }),
+      prisma.users.findUnique({
+        where: {
+          username,
+        }
+      }),
+    ]);
 
-    if (userExistsResult) {
-      return res.status(statusCodes.BAD_REQUEST.code).send({
-        error: 'User already exists',
-        user: { email, username, password },
+    if (userExistsWithSameEmail || userExistsWithSameUsername) {
+      const errorMsg = ['has already been taken'];
+      
+      if (userExistsWithSameEmail) {
+        errorsObj.email = errorMsg;
+      } else if (userExistsWithSameUsername) {
+        errorsObj.username = errorMsg;
+      }
+      
+      return res.status(statusCodes.UNPROCESSABLE_ENTITY.code).send({
+        errors: errorsObj,
       });
     }
 
     const hashedPassword = await hashPassword(password);
-    await prisma.users.create({
-      data: { email, username, hashedPassword }
+    const newUser = await prisma.users.create({
+      data: { 
+        email,
+        username,
+        hashedPassword,
+        image: DEFAULT_IMAGE_URL,
+      },
+      select: {
+        email: true,
+        username: true,
+        image: true,
+        bio: true,
+      }
+    });
+
+    const authToken = signJwtToken({ 
+      email: newUser.email,
     });
 
     return res.status(statusCodes.CREATED.code).send({
       user: {
-        email, username,
-      }
+        ...newUser,
+        token: authToken,
+      },
     });
   } catch (error) {
-    console.error(error);
     return res.status(statusCodes.INTERNAL_SERVER_ERROR.code).send({
       error: 'Cannot register user',
-      user: { email, username, password },
       stack: error,
     });
   }
 }
 
-export { registerUserController }
+async function logInUserController(
+  req: Request<
+    void, 
+    UserResponse, 
+    { user: Omit<UserCredentials, 'username'>, }
+  >, 
+  res: Response<UserResponse>
+) {
+  const { user: { email, password } } = req.body;
+  const errorsObj: ErrorsObj = {};
+
+  if (!email || !password) {
+    const errorMsg = ['can\'t be blank'];
+
+    if (!email) { errorsObj.email = errorMsg; }
+    else if (!password) { errorsObj.password = errorMsg; }
+    
+    return res.status(statusCodes.BAD_REQUEST.code).send({
+      errors: errorsObj,
+    });
+  }
+
+  try {
+    const invalidCredentialsError = {
+      errors: {
+        'email or password': ['is invalid']
+      }
+    };
+    
+    const user = await prisma.users.findUnique({
+        where: {
+          email,
+        }
+      });
+
+    if (!user) {
+      return res.status(statusCodes.FORBIDDEN.code).send(invalidCredentialsError);
+    }
+
+    const passwordIsCorrent = await comparePassword(password, user.hashedPassword);
+
+    if (!passwordIsCorrent) {
+      return res.status(statusCodes.FORBIDDEN.code).send(invalidCredentialsError);
+    }
+
+    const authToken = signJwtToken({ 
+      email,
+    });
+
+    const { hashedPassword, id, ...userAttributesToReturn } = user;
+
+    return res.status(statusCodes.CREATED.code).send({
+      user: {
+        ...userAttributesToReturn,
+        token: authToken,
+      },
+    });
+  } catch (error) {
+    return res.status(statusCodes.INTERNAL_SERVER_ERROR.code).send({
+      error: 'Cannot login',
+      stack: error,
+    });
+  }
+}
+
+export { registerUserController, logInUserController }

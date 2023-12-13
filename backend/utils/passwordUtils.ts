@@ -13,7 +13,7 @@ async function hashPassword(password: string) {
 
 async function comparePassword(rawPassword: string, hashedPassword: string) {
   try {
-    const isMatch = await bunPassword.verify(hashedPassword, rawPassword);
+    const isMatch = await bunPassword.verify(rawPassword, hashedPassword);
     return isMatch;
   } catch (error) {
     // Handle error

@@ -26,6 +26,10 @@ app.use(parseRoutePath('/users'), usersRouter);
 
 app.use(parseRoutePath('/user'), userRouter);
 
+app.use((_, res) => {
+  res.status(404).send('Not Found');
+});
+
 app.listen(PORT, () => {
   console.log(`Listening on port ${PORT}...`);
 });
