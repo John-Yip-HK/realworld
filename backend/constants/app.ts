@@ -1,4 +1,4 @@
-const DUMMY_SECRET = 'default_secret';
 const PORT = 8080;
+const JWT_SECRET = process.env['JWT_SECRET']!;
 
-export { DUMMY_SECRET, PORT }
+export { PORT, JWT_SECRET }

@@ -1,21 +1,19 @@
 import { Router } from 'express';
+import passport from 'passport';
+
+import { checkAuthMiddleware } from '../../middlewares/checkAuthMiddleware';
 
 import type { UserResponse } from './types';
 
 const userRouter = Router();
 
-const user: UserResponse = {
-  user: {
-    email: 'jake@jake.jake',
-    token: 'jwt.token.here',
-    username: 'jake',
-    bio: 'I work at statefarm',
-    image: null
+userRouter.get<string, void, UserResponse>(
+  '/', 
+  passport.authenticate('jwt', { session: false }),
+  checkAuthMiddleware,
+  (req, res) => {
+    return res.send({ user: { ...req.user! } });
   }
-};
-
-userRouter.get< , , UserResponse>('/', (req, res) => {
-  res.send(user);
-});
+);
 
 export { userRouter };

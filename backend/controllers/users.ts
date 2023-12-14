@@ -5,7 +5,7 @@ import { comparePassword, hashPassword } from '../utils/passwordUtils';
 
 import statusCodes from '../constants/status-codes';
 import { DEFAULT_IMAGE_URL } from '../constants/users';
-import { signJwtToken } from '../utils/jwtUtils';
+import { signJwt } from '../utils/jwtUtils';
 
 import type { ErrorsObj, UserCredentials, UserResponse } from '../routes/User';
 
@@ -85,7 +85,7 @@ async function registerUserController(
       }
     });
 
-    const authToken = signJwtToken({ 
+    const authToken = signJwt({ 
       email: newUser.email,
     });
 
@@ -148,7 +148,7 @@ async function logInUserController(
       return res.status(statusCodes.FORBIDDEN.code).send(invalidCredentialsError);
     }
 
-    const authToken = signJwtToken({ 
+    const authToken = signJwt({ 
       email,
     });
 

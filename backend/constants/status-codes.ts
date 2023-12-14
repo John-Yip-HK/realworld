@@ -7,9 +7,17 @@ export default {
     message: 'Bad Request',
     code: 400,
   },
+  UNAUTHORIZED: {
+    message: 'Unauthorized',
+    code: 401,
+  },
   FORBIDDEN: {
     message: 'Forbidden',
-    code: 403
+    code: 403,
+  },
+  NOT_FOUND: {
+    message: 'Not Found',
+    code: 404,
   },
   UNPROCESSABLE_ENTITY: {
     message: 'Unprocessable Entity',
