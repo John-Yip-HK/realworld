@@ -6,13 +6,23 @@ import {
 import { PrismaClient } from '@prisma/client';
 
 import { JWT_SECRET } from '../constants/app';
+import { handleUserResponse } from '../utils/handleUserResponseUtils';
+import { extractJwtFromHeader } from '../utils/jwtUtils';
 
 const prisma = new PrismaClient();
+
+const { fromAuthHeaderAsBearerToken, fromExtractors, fromHeader } = ExtractJwt;
 
 passport.use(new JwtStrategy(
   {
     secretOrKey: JWT_SECRET,
-    jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+    jwtFromRequest: fromExtractors([
+      fromAuthHeaderAsBearerToken(), 
+      (req) => {
+        const token = extractJwtFromHeader(fromHeader('authorization')(req));
+        return token ?? null;
+      }
+    ]),
   }, 
   async (jwtPayload, done) => {
     const dummyUser: any = {};
@@ -32,9 +42,7 @@ passport.use(new JwtStrategy(
         });
       }
 
-      const { hashedPassword, id, ...otherUserAttributes } = user;
-
-      done(null, { ...otherUserAttributes, token: '' });
+      done(null, handleUserResponse(user, '').user);
     } catch (error) {
       done(null, dummyUser, error);
     }

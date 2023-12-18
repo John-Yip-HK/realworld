@@ -1,23 +1,21 @@
-interface User {
-  email: string;
+import { type Users } from '@prisma/client';
+import type { ErrorResponse } from '../../globals';
+
+type User = Omit<Users, 'id' | 'hashedPassword'> & {
   token: string;
-  username: string;
-  bio: string | null;
-  image: Nullable<string>;
-}
+};
 
 interface UserCredentials extends Pick<User, 'email' | 'username'> {
   password: string;
 }
 
-type ErrorsObj = Record<string, string[]>;
-
-type UserResponse = {
-  user: User;
-} | ({
-  error: string;
-} & Record<string, unknown>) | {
-  errors: ErrorsObj;
+type UserReqBody = {
+  user: Partial<User & Pick<UserCredentials, 'password'>>;
 };
+type UserResBody = {
+  user: User;
+}
 
-export { User, UserResponse, UserCredentials, ErrorsObj }
+type UserResponse = UserResBody | ErrorResponse;
+
+export { User, UserResBody, UserReqBody, UserResponse, UserCredentials }

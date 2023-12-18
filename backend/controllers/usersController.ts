@@ -7,7 +7,10 @@ import statusCodes from '../constants/status-codes';
 import { DEFAULT_IMAGE_URL } from '../constants/users';
 import { signJwt } from '../utils/jwtUtils';
 
-import type { ErrorsObj, UserCredentials, UserResponse } from '../routes/User';
+import type { UserCredentials, UserResponse } from '../routes/User';
+import type { ErrorsObj } from '../globals';
+import { handleUserResponse } from '../utils/handleUserResponseUtils';
+
 
 const prisma = new PrismaClient();
 
@@ -98,7 +101,7 @@ async function registerUserController(
   } catch (error) {
     return res.status(statusCodes.INTERNAL_SERVER_ERROR.code).send({
       error: 'Cannot register user',
-      stack: error,
+      details: error,
     });
   }
 }
@@ -148,22 +151,13 @@ async function logInUserController(
       return res.status(statusCodes.FORBIDDEN.code).send(invalidCredentialsError);
     }
 
-    const authToken = signJwt({ 
-      email,
-    });
+    const authToken = signJwt({ email });
 
-    const { hashedPassword, id, ...userAttributesToReturn } = user;
-
-    return res.status(statusCodes.CREATED.code).send({
-      user: {
-        ...userAttributesToReturn,
-        token: authToken,
-      },
-    });
+    return res.status(statusCodes.CREATED.code).send(handleUserResponse(user, authToken));
   } catch (error) {
     return res.status(statusCodes.INTERNAL_SERVER_ERROR.code).send({
       error: 'Cannot login',
-      stack: error,
+      details: error,
     });
   }
 }

@@ -6,10 +6,13 @@ import { userRouter, usersRouter } from './routes/User';
 import { tagsRouter } from './routes/Tags';
 import { parseRoutePath } from './utils/parseRoutePath';
 
-import { PORT } from './constants/app';
+import jwtPassportMiddleware from './middlewares/jwtPassportMiddleware';
+import { checkAuthMiddleware } from './middlewares/checkAuthMiddleware';
 
-import './strategies/jwt';
+import { PORT } from './constants/app';
 import statusCodes from './constants/status-codes';
+
+import './strategies/jwtStrategy';
 
 const app = express();
 
@@ -18,6 +21,8 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(parseRoutePath('/tags'), tagsRouter);
 app.use(parseRoutePath('/users'), usersRouter);
+
+app.use(jwtPassportMiddleware, checkAuthMiddleware);
 
 app.use(parseRoutePath('/user'), userRouter);
 
