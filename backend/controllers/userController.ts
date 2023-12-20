@@ -6,6 +6,7 @@ import statusCodes from '../constants/status-codes';
 import { handleUserResponse } from '../utils/handleUserResponseUtils';
 import { hashPassword } from '../utils/passwordUtils';
 import { signJwt } from '../utils/jwtUtils';
+import { getUserByEmail, getUserByUsername, updateUserByEmail } from '../dao/usersDao';
 
 import { type UserReqBody, type UserResponse } from '../routes/User';
 
@@ -27,28 +28,21 @@ async function updateCurrentUserController(
   }
 
   const sanitisedNewUserDetails = Object.fromEntries(
-    Object.entries(newUserDetails.user).filter(([, value]) => Boolean(value))
+    Object
+      .entries(newUserDetails.user)
+      .filter(([key, value]) => key === 'bio' || Boolean(value))
   );
   const isUsernameChanged = 'username' in sanitisedNewUserDetails && Boolean(sanitisedNewUserDetails.username);
   const isEmailChanged = 'email' in sanitisedNewUserDetails && Boolean(sanitisedNewUserDetails.email);
   const isPasswordChanged = 'password' in sanitisedNewUserDetails && Boolean(sanitisedNewUserDetails.password);
 
   try {
-    // If duplicate username or email is found, return 422 error inducating the duplication.
-    const [numUsersWithSameUsername, numUsersWithSameEmail] = await Promise.all([
-      isUsernameChanged ? prisma.users.count({
-        where: {
-          username: sanitisedNewUserDetails.username!,
-        }
-      }) : 0,
-      isEmailChanged ? prisma.users.count({
-        where: {
-          email: sanitisedNewUserDetails.email!,
-        }
-      }) : 0,
+    const [userWithSameUsername, userWithSameEmail] = await Promise.all([
+      isUsernameChanged ? getUserByUsername(sanitisedNewUserDetails.username!) : null,
+      isEmailChanged ? getUserByEmail(sanitisedNewUserDetails.email!) : null,
     ]);
 
-    if (numUsersWithSameUsername > 0) {
+    if (userWithSameUsername) {
       return res.status(UNPROCESSABLE_ENTITY.code).send({
         errors: {
           username: ['is already taken.'],
@@ -56,7 +50,7 @@ async function updateCurrentUserController(
       });
     }
 
-    if (numUsersWithSameEmail > 0) {
+    if (userWithSameEmail) {
       return res.status(UNPROCESSABLE_ENTITY.code).send({
         errors: {
           email: ['is already taken.'],
@@ -70,10 +64,7 @@ async function updateCurrentUserController(
       sanitisedNewUserDetails.hashedPassword = newHashedPassword;
     }
     
-    const updateUserResult = await prisma.users.update({
-      where: { email },
-      data: sanitisedNewUserDetails,
-    });
+    const updateUserResult = await updateUserByEmail(email, sanitisedNewUserDetails);
 
     let tokenToBeReturned = token;
 

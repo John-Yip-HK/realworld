@@ -2,15 +2,22 @@ import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 
 import { comparePassword, hashPassword } from '../utils/passwordUtils';
+import { signJwt } from '../utils/jwtUtils';
+import { handleUserResponse } from '../utils/handleUserResponseUtils';
+import { createUser, getUserByEmail, getUserByUsername } from '../dao/usersDao';
 
 import statusCodes from '../constants/status-codes';
-import { DEFAULT_IMAGE_URL } from '../constants/users';
-import { signJwt } from '../utils/jwtUtils';
 
 import type { UserCredentials, UserResponse } from '../routes/User';
 import type { ErrorsObj } from '../globals';
-import { handleUserResponse } from '../utils/handleUserResponseUtils';
 
+const { 
+  BAD_REQUEST, 
+  UNPROCESSABLE_ENTITY, 
+  INTERNAL_SERVER_ERROR, 
+  CREATED, 
+  FORBIDDEN 
+} = statusCodes;
 
 const prisma = new PrismaClient();
 
@@ -39,23 +46,15 @@ async function registerUserController(
     else if (!username) { errorsObj.username = errorMsg; }
     else if (!password) { errorsObj.password = errorMsg; }
     
-    return res.status(statusCodes.BAD_REQUEST.code).send({
+    return res.status(BAD_REQUEST.code).send({
       errors: errorsObj,
     });
   }
   
   try {
     const [userExistsWithSameEmail, userExistsWithSameUsername] = await Promise.all([
-      prisma.users.findUnique({
-        where: {
-          email,
-        }
-      }),
-      prisma.users.findUnique({
-        where: {
-          username,
-        }
-      }),
+      getUserByEmail(email),
+      getUserByUsername(username),
     ]);
 
     if (userExistsWithSameEmail || userExistsWithSameUsername) {
@@ -67,39 +66,25 @@ async function registerUserController(
         errorsObj.username = errorMsg;
       }
       
-      return res.status(statusCodes.UNPROCESSABLE_ENTITY.code).send({
+      return res.status(UNPROCESSABLE_ENTITY.code).send({
         errors: errorsObj,
       });
     }
 
     const hashedPassword = await hashPassword(password);
-    const newUser = await prisma.users.create({
-      data: { 
-        email,
-        username,
-        hashedPassword,
-        image: DEFAULT_IMAGE_URL,
-      },
-      select: {
-        email: true,
-        username: true,
-        image: true,
-        bio: true,
-      }
+    const newUser = await createUser({ 
+      email,
+      username,
+      hashedPassword,
     });
 
     const authToken = signJwt({ 
       email: newUser.email,
     });
 
-    return res.status(statusCodes.CREATED.code).send({
-      user: {
-        ...newUser,
-        token: authToken,
-      },
-    });
+    return res.status(CREATED.code).send(handleUserResponse(newUser, authToken));
   } catch (error) {
-    return res.status(statusCodes.INTERNAL_SERVER_ERROR.code).send({
+    return res.status(INTERNAL_SERVER_ERROR.code).send({
       error: 'Cannot register user',
       details: error,
     });
@@ -123,7 +108,7 @@ async function logInUserController(
     if (!email) { errorsObj.email = errorMsg; }
     else if (!password) { errorsObj.password = errorMsg; }
     
-    return res.status(statusCodes.BAD_REQUEST.code).send({
+    return res.status(BAD_REQUEST.code).send({
       errors: errorsObj,
     });
   }
@@ -135,27 +120,23 @@ async function logInUserController(
       }
     };
     
-    const user = await prisma.users.findUnique({
-        where: {
-          email,
-        }
-      });
+    const user = await getUserByEmail(email);
 
     if (!user) {
-      return res.status(statusCodes.FORBIDDEN.code).send(invalidCredentialsError);
+      return res.status(FORBIDDEN.code).send(invalidCredentialsError);
     }
 
     const passwordIsCorrent = await comparePassword(password, user.hashedPassword);
 
     if (!passwordIsCorrent) {
-      return res.status(statusCodes.FORBIDDEN.code).send(invalidCredentialsError);
+      return res.status(FORBIDDEN.code).send(invalidCredentialsError);
     }
 
     const authToken = signJwt({ email });
 
-    return res.status(statusCodes.CREATED.code).send(handleUserResponse(user, authToken));
+    return res.status(CREATED.code).send(handleUserResponse(user, authToken));
   } catch (error) {
-    return res.status(statusCodes.INTERNAL_SERVER_ERROR.code).send({
+    return res.status(INTERNAL_SERVER_ERROR.code).send({
       error: 'Cannot login',
       details: error,
     });
