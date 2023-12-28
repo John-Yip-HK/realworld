@@ -1,7 +1,7 @@
 import { PrismaClient, type Users } from '@prisma/client';
 
 import { DEFAULT_IMAGE_URL } from '../constants/users';
-import { type User } from '../routes/User';
+import { AmendableUserFields } from '../routes/User';
 
 const prisma = new PrismaClient();
 
@@ -51,7 +51,7 @@ export async function createUser(newUser: Pick<Users, 'email' | 'username' | 'ha
  * @param newUserDetails - The new details to update for the user.
  * @returns A promise that resolves to the updated user.
  */
-export async function updateUserByEmail(email: string, newUserDetails: Partial<User>) {
+export async function updateUserByEmail(email: string, newUserDetails: Partial<AmendableUserFields>) {
   return await prisma.users.update({
     where: { email },
     data: newUserDetails,

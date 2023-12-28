@@ -1,7 +1,9 @@
 import { type NextFunction, Router, type Response } from 'express';
 
-import { getProfileByUsername } from '../../controllers/profilesController';
+import { followUser, getProfileByUsername, unfollowUser } from '../../controllers/profilesController';
 import { extractJwtFromHeader, verifyJwt } from '../../utils/jwtUtils';
+import jwtPassportMiddleware from '../../middlewares/jwtPassportMiddleware';
+import { checkAuthMiddleware } from '../../middlewares/checkAuthMiddleware';
 
 import type { ProfileRequest, ProfileResponse } from './types';
 
@@ -21,6 +23,20 @@ profileRouter.get(
     next();
   },
   getProfileByUsername
+);
+
+profileRouter.post(
+  '/:username/follow',
+  jwtPassportMiddleware,
+  checkAuthMiddleware,
+  followUser,
+);
+
+profileRouter.delete(
+  '/:username/follow',
+  jwtPassportMiddleware,
+  checkAuthMiddleware,
+  unfollowUser,
 );
 
 export { profileRouter };

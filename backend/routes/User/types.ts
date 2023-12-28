@@ -5,6 +5,8 @@ type User = Omit<Users, 'id' | 'hashedPassword' | 'followedUsers'> & {
   token: string;
 };
 
+type AmendableUserFields = Omit<Users, 'id'>;
+
 interface UserCredentials extends Pick<User, 'email' | 'username'> {
   password: string;
 }
@@ -24,4 +26,5 @@ export {
   UserReqBody, 
   UserResponse, 
   UserCredentials,
+  AmendableUserFields,
 }

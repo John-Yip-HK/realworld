@@ -28,7 +28,8 @@ export const checkAuthMiddleware: RequestHandler = (req, res, next) => {
     return res
       .status(INTERNAL_SERVER_ERROR.code)
       .send({
-        error: 'User information has lost unexpectedly.',
+        error: INTERNAL_SERVER_ERROR.message,
+        details: 'User information has lost unexpectedly.',
       });
   }
 
