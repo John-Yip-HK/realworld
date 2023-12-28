@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
 
 import { comparePassword, hashPassword } from '../utils/passwordUtils';
 import { signJwt } from '../utils/jwtUtils';
@@ -18,8 +17,6 @@ const {
   CREATED, 
   FORBIDDEN 
 } = statusCodes;
-
-const prisma = new PrismaClient();
 
 /**
  * Registers a new user.

@@ -1,7 +1,7 @@
 import { type Users } from '@prisma/client';
 import type { ErrorResponse } from '../../globals';
 
-type User = Omit<Users, 'id' | 'hashedPassword'> & {
+type User = Omit<Users, 'id' | 'hashedPassword' | 'followedUsers'> & {
   token: string;
 };
 
@@ -18,4 +18,10 @@ type UserResBody = {
 
 type UserResponse = UserResBody | ErrorResponse;
 
-export { User, UserResBody, UserReqBody, UserResponse, UserCredentials }
+export { 
+  User, 
+  UserResBody, 
+  UserReqBody, 
+  UserResponse, 
+  UserCredentials,
+}

@@ -1,5 +1,4 @@
 import { type Response, type Request } from 'express';
-import { PrismaClient } from '@prisma/client';
 
 import statusCodes from '../constants/status-codes';
 
@@ -11,8 +10,6 @@ import { getUserByEmail, getUserByUsername, updateUserByEmail } from '../dao/use
 import { type UserReqBody, type UserResponse } from '../routes/User';
 
 const { BAD_REQUEST, UNPROCESSABLE_ENTITY, INTERNAL_SERVER_ERROR } = statusCodes;
-
-const prisma = new PrismaClient();
 
 async function updateCurrentUserController(
   req: Request<void, UserResponse, UserReqBody>,

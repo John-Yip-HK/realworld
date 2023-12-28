@@ -14,6 +14,7 @@ model Users {
   hashedPassword String  @map("hashed_password")
   bio            String? @db.VarChar(128)
   image          String
+  followedUsers  Int[]   @default([]) @map("followed_users")
 
   @@map("users")
 }
