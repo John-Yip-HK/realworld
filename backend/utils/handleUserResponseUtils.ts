@@ -1,7 +1,7 @@
-import { type Users } from '@prisma/client';
+import { type User } from '@prisma/client';
 import { type User } from '../routes/User';
 
-export function handleUserResponse(user: Users, token: User['token']) {
+export function handleUserResponse(user: User, token: User['token']) {
   const { 
     id, 
     hashedPassword, 
@@ -14,7 +14,7 @@ export function handleUserResponse(user: Users, token: User['token']) {
   };
 }
 
-export function handleProfileResponse(user: Users, following: boolean) {
+export function handleProfileResponse(user: User, following: boolean) {
   const { 
     id, 
     hashedPassword, 

@@ -1,11 +1,11 @@
-import { type Users } from '@prisma/client';
+import { type User as PrismaUser } from '@prisma/client';
 import type { ErrorResponse } from '../../globals';
 
-type User = Omit<Users, 'id' | 'hashedPassword' | 'followedUsers'> & {
+type User = Omit<PrismaUser, 'id' | 'hashedPassword' | 'followedUsers'> & {
   token: string;
 };
 
-type AmendableUserFields = Omit<Users, 'id'>;
+type AmendableUserFields = Omit<PrismaUser, 'id'>;
 
 interface UserCredentials extends Pick<User, 'email' | 'username'> {
   password: string;

@@ -1,4 +1,4 @@
-import { PrismaClient, type Users } from '@prisma/client';
+import { PrismaClient, type User } from '@prisma/client';
 
 import { DEFAULT_IMAGE_URL } from '../constants/users';
 import { AmendableUserFields } from '../routes/User';
@@ -11,7 +11,7 @@ const prisma = new PrismaClient();
  * @returns A promise that resolves to the user object if found, or null if not found.
  */
 export async function getUserByEmail(email: string) {
-  return await prisma.users.findUnique({
+  return await prisma.user.findUnique({
     where: {
       email,
     }
@@ -24,7 +24,7 @@ export async function getUserByEmail(email: string) {
  * @returns A Promise that resolves to the user object if found, or null if not found.
  */
 export async function getUserByUsername(username: string) {
-  return await prisma.users.findUnique({
+  return await prisma.user.findUnique({
     where: {
       username,
     }
@@ -36,8 +36,8 @@ export async function getUserByUsername(username: string) {
  * @param newUser - The user object containing email, username, and hashed password.
  * @returns A promise that resolves to the created user.
  */
-export async function createUser(newUser: Pick<Users, 'email' | 'username' | 'hashedPassword'>) {
-  return await prisma.users.create({
+export async function createUser(newUser: Pick<User, 'email' | 'username' | 'hashedPassword'>) {
+  return await prisma.user.create({
     data: {
       ...newUser,
       image: DEFAULT_IMAGE_URL,
@@ -52,7 +52,7 @@ export async function createUser(newUser: Pick<Users, 'email' | 'username' | 'ha
  * @returns A promise that resolves to the updated user.
  */
 export async function updateUserByEmail(email: string, newUserDetails: Partial<AmendableUserFields>) {
-  return await prisma.users.update({
+  return await prisma.user.update({
     where: { email },
     data: newUserDetails,
   });

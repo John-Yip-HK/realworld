@@ -1,9 +1,9 @@
-import { type Users } from '@prisma/client';
+import { type User } from '@prisma/client';
 import { type Request } from 'express';
 
 import type { ErrorResponse } from '../../globals';
 
-type Profile = Pick<Users, 'username' | 'bio' | 'image'> & {
+type Profile = Pick<User, 'username' | 'bio' | 'image'> & {
   following: boolean;
 }
 
@@ -13,7 +13,7 @@ interface ProfileResBody {
 
 type ProfileResponse = ProfileResBody | ErrorResponse;
 
-interface ProfileRequest extends Request<Pick<Users, 'username'>, ProfileResponse, void> {
+interface ProfileRequest extends Request<Pick<User, 'username'>, ProfileResponse, void> {
   currentUserEmail?: string;
 }
 
