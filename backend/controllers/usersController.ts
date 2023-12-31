@@ -75,7 +75,8 @@ async function registerUserController(
       hashedPassword,
     });
 
-    const authToken = signJwt({ 
+    const authToken = signJwt({
+      userId: newUser.id,
       email: newUser.email,
     });
 
@@ -129,7 +130,7 @@ async function logInUserController(
       return res.status(FORBIDDEN.code).send(invalidCredentialsError);
     }
 
-    const authToken = signJwt({ email });
+    const authToken = signJwt({ email, userId: user.id, });
 
     return res.status(CREATED.code).send(handleUserResponse(user, authToken));
   } catch (error) {

@@ -2,9 +2,9 @@ import * as jwt from 'jsonwebtoken';
 
 import { JWT_SECRET } from '../constants/app';
 
-import type { User } from '../routes/User';
+import { User as PrismaUser } from '@prisma/client';
 
-export function signJwt(payload: Pick<User, 'email'>) {
+export function signJwt(payload: Pick<PrismaUser, 'email'> & { userId: PrismaUser['id']; }) {
   return jwt.sign(payload, JWT_SECRET);
 }
 
