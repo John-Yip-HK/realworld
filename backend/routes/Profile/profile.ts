@@ -4,13 +4,13 @@ import { followUser, getProfileByUsername, unfollowUser } from '../../controller
 import jwtPassportMiddleware from '../../middlewares/jwtPassportMiddleware';
 import { checkAuthMiddleware } from '../../middlewares/checkAuthMiddleware';
 
-import getCurrentUserEmailMiddleware from '../../middlewares/getCurrentUserEmailMiddleware';
+import getJwtUserDetailsMiddleware from '../../middlewares/getJwtUserDetailsMiddleware';
 
 const profileRouter = Router();
 
 profileRouter.get(
   '/:username',
-  getCurrentUserEmailMiddleware,
+  getJwtUserDetailsMiddleware,
   getProfileByUsername
 );
 

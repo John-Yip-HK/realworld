@@ -1,16 +1,26 @@
 import { type User as PrismaUser } from '@prisma/client';
-import { type User } from '../routes/User';
+import { type User as RealworldUser } from '../routes/User';
 
-export function handleUserResponse(user: PrismaUser, token: User['token']) {
-  const { 
+export function handleUserResponse(
+  user: PrismaUser, 
+  token: RealworldUser['token'], 
+  needFollowedUsers?: boolean
+) {
+  const {
     id, 
     hashedPassword, 
-    followedUsers, 
     ...otherFields
   } = user;
+
+  const remainingFields = needFollowedUsers ?
+    otherFields :
+    (() => {
+      const { followedUsers, ...filteredFields } = otherFields;
+      return filteredFields;
+    })();
   
   return {
-    user: { token, ...otherFields },
+    user: { token, ...remainingFields },
   };
 }
 

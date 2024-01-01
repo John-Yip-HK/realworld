@@ -38,7 +38,7 @@ passport.use(new JwtStrategy(
         });
       }
 
-      done(null, handleUserResponse(user, '').user);
+      done(null, handleUserResponse(user, '', true).user);
     } catch (error) {
       done(null, dummyUser, error);
     }

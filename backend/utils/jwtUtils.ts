@@ -4,7 +4,11 @@ import { JWT_SECRET } from '../constants/app';
 
 import { User as PrismaUser } from '@prisma/client';
 
-export function signJwt(payload: Pick<PrismaUser, 'email'> & { userId: PrismaUser['id']; }) {
+export interface SignJwtPayload {
+  email: PrismaUser['email'];
+}
+
+export function signJwt(payload: SignJwtPayload) {
   return jwt.sign(payload, JWT_SECRET);
 }
 
