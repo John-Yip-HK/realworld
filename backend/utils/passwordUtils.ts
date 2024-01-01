@@ -1,4 +1,4 @@
-import { password as bunPassword } from "bun";
+import { password as bunPassword } from 'bun';
 
 async function hashPassword(password: string) {
   try {
