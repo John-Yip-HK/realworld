@@ -24,6 +24,12 @@ export function handleUserResponse(
   };
 }
 
+type RealworldUserWithFollowedUsersInfo = RealworldUser & Pick<PrismaUser, 'followedUsers'>;
+
+export function hasFollowedUsers(user: RealworldUser | RealworldUserWithFollowedUsersInfo): user is RealworldUserWithFollowedUsersInfo {
+  return 'followedUsers' in user;
+}
+
 export function handleProfileResponse(user: PrismaUser, following: boolean) {
   const { 
     id, 

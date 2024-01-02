@@ -2,13 +2,11 @@ import type { User as RealworldUser } from './routes/User';
 
 type ErrorsObj = Record<string, string[]>;
 type ErrorResponse = 
-  (
-    {
-      error: string;
-    } 
-    & Record<string, unknown>
-  ) 
-  | {
+  {
+    error: string;
+    details: unknown;
+  } | 
+  {
     errors: ErrorsObj;
   };
 

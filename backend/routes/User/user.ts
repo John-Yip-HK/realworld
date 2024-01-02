@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { updateCurrentUserController } from '../../controllers/userController';
 import { checkAuthMiddleware } from '../../middlewares/checkAuthMiddleware';
 import jwtPassportMiddleware from '../../middlewares/jwtPassportMiddleware';
+import { hasFollowedUsers } from '../../utils/handleUserResponseUtils';
 
 import type { UserReqBody, UserResponse } from './';
 
@@ -12,7 +13,7 @@ userRouter.use(jwtPassportMiddleware, checkAuthMiddleware);
 
 userRouter.get<string, void, UserResponse>('/', (req, res) => {
   const currentUser = req.user!;
-  const otherFields = ('followedUsers' in currentUser) ? (() => {
+  const otherFields = hasFollowedUsers(currentUser) ? (() => {
     const { followedUsers, ...filteredFields } = currentUser;
     return filteredFields;
   })() : currentUser;

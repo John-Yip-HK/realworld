@@ -6,7 +6,7 @@ import { extractJwtFromHeader } from '../utils/jwtUtils';
 
 const { UNAUTHORIZED, FORBIDDEN, INTERNAL_SERVER_ERROR } = statusCodes;
 
-export const checkAuthMiddleware: RequestHandler = (req, res, next) => {
+export const checkAuthMiddleware: RequestHandler<any, any, any, any> = (req, res, next) => {
   const { headers: { authorization }, authInfo } = req;
   const token = extractJwtFromHeader(authorization);
 

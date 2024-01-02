@@ -3,6 +3,10 @@ export default {
     message: 'Created',
     code: 201,
   },
+  NO_CONTENT: {
+    message: 'No Content',
+    code: 204,
+  },
   BAD_REQUEST: {
     message: 'Bad Request',
     code: 400,
