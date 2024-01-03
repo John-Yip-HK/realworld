@@ -121,7 +121,7 @@ export async function createArticle(params: CreateArticleBody['article'] & { use
 export async function updateArticle({ userId, articleId, oldTitle, ...params }: UpdateArticleBody['article'] & {
   oldTitle: string;
   userId: number;
-  articleId: NonNullable<Prisma.ArticleUncheckedCreateInput['id']>;
+  articleId: number;
 }) {
   const slug = parseTitleToSlug(params.title ?? oldTitle, userId);
   
@@ -138,6 +138,36 @@ export async function updateArticle({ userId, articleId, oldTitle, ...params }: 
       user: true,
     },
   });
+}
+
+export async function favoriteArticle(params: {
+  articleId: number;
+  oldFavoritedUsersList: number[];
+  userId: number;
+}) {
+  return await prisma.article.update({
+    where: { id: params.articleId },
+    data: {
+      favoritedUserIdList: params.oldFavoritedUsersList.concat(params.userId),
+      updatedAt: new Date(),
+    },
+    include: { user: true },
+  })
+}
+
+export async function unfavoriteArticle(params: {
+  articleId: number;
+  oldFavoritedUsersList: number[];
+  userId: number;
+}) {
+  return await prisma.article.update({
+    where: { id: params.articleId },
+    data: {
+      favoritedUserIdList: params.oldFavoritedUsersList.filter(userId => userId !== params.userId),
+      updatedAt: new Date(),
+    },
+    include: { user: true },
+  })
 }
 
 export async function deleteArticle({ articleId: id, slug }: {

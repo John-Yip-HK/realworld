@@ -28,8 +28,10 @@ interface GetArticlesQueryParams {
 }
 
 interface ArticlePathParams {
-  slug?: string;
+  slug: string;
 }
+
+type RawArticlePathParams = Partial<ArticlePathParams>;
 
 type GetArticlesFeedQueryParams = Pick<GetArticlesQueryParams, 'offset' | 'limit'> & {
   followedUsers?: User['followedUsers'];
@@ -54,8 +56,9 @@ export type {
   GetArticlesQueryParams,
   GetArticlesFeedQueryParams,
   SingleArticleResponse,
+  DeleteArticleResponse,
   CreateArticleBody,
   UpdateArticleBody,
   ArticlePathParams,
-  DeleteArticleResponse,
+  RawArticlePathParams,
 }

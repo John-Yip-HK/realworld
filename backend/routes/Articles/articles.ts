@@ -1,25 +1,36 @@
-import { Router } from 'express';
+import { Router, type RequestHandler } from 'express';
 import type { User as PrismaUser } from '@prisma/client';
 
-import { createArticle, deleteArticle, getArticle, getArticles, getArticlesFeed, updateArticle } from '../../dao/articlesDao';
-import statusCodes from '../../constants/status-codes';
+import { 
+  createArticle, 
+  deleteArticle, 
+  favoriteArticle, 
+  getArticle, 
+  getArticles, 
+  getArticlesFeed, 
+  unfavoriteArticle, 
+  updateArticle 
+} from '../../dao/articlesDao';
+import { getUserByEmail } from '../../dao/usersDao';
 import getJwtUserDetailsMiddleware, { type RequestWithCurrentUserEmail } from '../../middlewares/getJwtUserDetailsMiddleware';
+import jwtPassportMiddleware from '../../middlewares/jwtPassportMiddleware';
+import { checkAuthMiddleware } from '../../middlewares/checkAuthMiddleware';
+import { handleProfileResponse } from '../../utils/handleUserResponseUtils';
 
-import {
+import statusCodes from '../../constants/status-codes';
+
+import type {
   GetArticlesFeedQueryParams,
-  type ArticleObj,
-  type GetArticlesQueryParams,
-  type MultipleArticlesResponse,
+  ArticleObj,
+  GetArticlesQueryParams,
+  MultipleArticlesResponse,
   SingleArticleResponse,
   CreateArticleBody,
   ArticlePathParams,
   UpdateArticleBody,
-  DeleteArticleResponse
-} from '.';
-import { handleProfileResponse } from '../../utils/handleUserResponseUtils';
-import { getUserByEmail } from '../../dao/usersDao';
-import jwtPassportMiddleware from '../../middlewares/jwtPassportMiddleware';
-import { checkAuthMiddleware } from '../../middlewares/checkAuthMiddleware';
+  DeleteArticleResponse,
+  RawArticlePathParams
+} from './types';
 
 const { INTERNAL_SERVER_ERROR, NOT_FOUND, BAD_REQUEST, FORBIDDEN, NO_CONTENT } = statusCodes;
 
@@ -52,6 +63,17 @@ function parseRawArticles(
       author: handleProfileResponse(articleAuthor, isFollowingArticleAuthor).profile,
     };
   });
+}
+
+const checkSlugPresenceMiddleware: RequestHandler<RawArticlePathParams, any, any, any> = (req, res, next) => {
+  if (!req.params.slug) {
+    return res.status(BAD_REQUEST.code).send({
+      error: BAD_REQUEST.message,
+      details: 'No article slug found.',
+    });
+  }
+
+  next();
 }
 
 async function getCurrentUser(currentUserEmail?: string) {
@@ -175,19 +197,13 @@ articlesRouter.post<void, SingleArticleResponse, CreateArticleBody, void>(
 
 articlesRouter.get<ArticlePathParams, SingleArticleResponse, void, void>(
   '/:slug', 
-  getJwtUserDetailsMiddleware, 
+  getJwtUserDetailsMiddleware,
+  checkSlugPresenceMiddleware,
   async (
     req: RequestWithCurrentUserEmail<ArticlePathParams, SingleArticleResponse, void, void>, 
     res
   ) => {
     const { currentUserEmail, params: { slug } } = req;
-    
-    if (!slug) {
-      return res.status(BAD_REQUEST.code).send({
-        error: BAD_REQUEST.message,
-        details: 'No article slug found.',
-      });
-    }
 
     try {      
       const currentUser = await getCurrentUser(currentUserEmail);
@@ -218,15 +234,9 @@ articlesRouter.put<ArticlePathParams, SingleArticleResponse, UpdateArticleBody, 
   '/:slug',
   jwtPassportMiddleware,
   checkAuthMiddleware,
+  checkSlugPresenceMiddleware,
   async (req, res) => {
     const { slug } = req.params;
-
-    if (!slug) {
-      return res.status(BAD_REQUEST.code).send({
-        error: BAD_REQUEST.message,
-        details: 'No article slug found.',
-      });
-    }
     
     try {
       const currentUser = await getCurrentUser(req.user!.email);
@@ -272,15 +282,9 @@ articlesRouter.delete<ArticlePathParams, DeleteArticleResponse, void, void>(
   '/:slug',
   jwtPassportMiddleware,
   checkAuthMiddleware,
+  checkSlugPresenceMiddleware,
   async (req, res) => {
     const { slug } = req.params;
-
-    if (!slug) {
-      return res.status(BAD_REQUEST.code).send({
-        error: BAD_REQUEST.message,
-        details: 'No article slug found.',
-      });
-    }
     
     try {
       const currentUser = await getCurrentUser(req.user!.email);
@@ -315,6 +319,96 @@ articlesRouter.delete<ArticlePathParams, DeleteArticleResponse, void, void>(
       });
     }
   }
+);
+
+articlesRouter.post<ArticlePathParams, SingleArticleResponse, void>(
+  '/:slug/favorite',
+  jwtPassportMiddleware,
+  checkAuthMiddleware,
+  checkSlugPresenceMiddleware,
+  async (req, res) => {
+    try {
+      const { slug } = req.params;
+      const { email } = req.user!;
+
+      const currentUser = (await getCurrentUser(email))!;
+      const { id: currentUserId } = currentUser;
+      const articleWithSlugParam = await getArticle({ slug });
+
+      if (!articleWithSlugParam) {
+        return res.status(NOT_FOUND.code).send({
+          error: NOT_FOUND.message,
+          details: 'This article does not exist.',
+        });
+      }
+
+      if (articleWithSlugParam.favoritedUserIdList.includes(currentUserId)) {
+        const processedArticle = parseRawArticles([articleWithSlugParam], currentUser)[0];
+        
+        return res.send({ article: processedArticle });
+      }
+
+      const likedArticle = await favoriteArticle({
+        articleId: articleWithSlugParam.id,
+        oldFavoritedUsersList: articleWithSlugParam.favoritedUserIdList,
+        userId: currentUserId,
+      });
+
+      const processedArticle = parseRawArticles([likedArticle], currentUser)[0];
+      
+      return res.send({ article: processedArticle });
+    } catch (error) {
+      return res.status(INTERNAL_SERVER_ERROR.code).send({
+        error: INTERNAL_SERVER_ERROR.message,
+        details: JSON.stringify(error),
+      });
+    }
+  }  
+);
+
+articlesRouter.delete<ArticlePathParams, SingleArticleResponse, void>(
+  '/:slug/favorite',
+  jwtPassportMiddleware,
+  checkAuthMiddleware,
+  checkSlugPresenceMiddleware,
+  async (req, res) => {
+    try {
+      const { slug } = req.params;
+      const { email } = req.user!;
+
+      const currentUser = (await getCurrentUser(email))!;
+      const { id: currentUserId } = currentUser;
+      const articleWithSlugParam = await getArticle({ slug });
+
+      if (!articleWithSlugParam) {
+        return res.status(NOT_FOUND.code).send({
+          error: NOT_FOUND.message,
+          details: 'This article does not exist.',
+        });
+      }
+
+      if (!articleWithSlugParam.favoritedUserIdList.includes(currentUserId)) {
+        const processedArticle = parseRawArticles([articleWithSlugParam], currentUser)[0];
+        
+        return res.send({ article: processedArticle });
+      }
+
+      const dislikedArticle = await unfavoriteArticle({
+        articleId: articleWithSlugParam.id,
+        oldFavoritedUsersList: articleWithSlugParam.favoritedUserIdList,
+        userId: currentUserId,
+      });
+
+      const processedArticle = parseRawArticles([dislikedArticle], currentUser)[0];
+      
+      return res.send({ article: processedArticle });
+    } catch (error) {
+      return res.status(INTERNAL_SERVER_ERROR.code).send({
+        error: INTERNAL_SERVER_ERROR.message,
+        details: JSON.stringify(error),
+      });
+    }
+  }  
 );
 
 export { articlesRouter };
