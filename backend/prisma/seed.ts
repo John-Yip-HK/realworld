@@ -16,6 +16,7 @@ async function main() {
         email: '123@123.io',
         username: '123123',
         hashedPassword: await hashPassword('123123'),
+        followedUsers: [2, 3],
         image: DEFAULT_IMAGE_URL,
         articles: {
           create: [
@@ -74,6 +75,44 @@ async function main() {
               title: 'Random Article 4',
               description: 'This is a different random article',
               body: 'Lorem ipsum dolor sit amet random 4.',
+              tagList: generateRandomTags(),
+            },
+            {
+              slug: 'random-article-5-2',
+              title: 'Random Article 5',
+              description: 'Random article five.',
+              body: 'Lorem ipsum dolor sit amet random 5.',
+              tagList: generateRandomTags(),
+            }
+          ],
+        },
+      },
+    });
+
+    await prisma.user.upsert({
+      where: { email: 'haha@hehe.io' },
+      update: {},
+      create: {
+        email: 'haha@hehe.io',
+        username: 'haha hehe',
+        hashedPassword: await hashPassword('haha hehe'),
+        bio: 'Currently the only one user that has a bio.',
+        followedUsers: [1],
+        image: DEFAULT_IMAGE_URL,
+        articles: {
+          create: [
+            {
+              slug: 'random-article-1-3',
+              title: 'Random Article Haha 1',
+              description: 'This is a random article',
+              body: 'Lorem ipsum dolor sit amet random.',
+              tagList: generateRandomTags(),
+            },
+            {
+              slug: 'random-article-2-3',
+              title: 'Random Article Hehe 2',
+              description: 'This is another random article',
+              body: 'Lorem ipsum dolor sit amet random 2.',
               tagList: generateRandomTags(),
             }
           ],
