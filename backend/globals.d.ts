@@ -9,6 +9,7 @@ type ErrorResponse =
   {
     errors: ErrorsObj;
   };
+type ResponseObj<T> = T | ErrorResponse;
 
 declare global {
   namespace Express {

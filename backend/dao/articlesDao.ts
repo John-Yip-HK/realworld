@@ -1,6 +1,12 @@
 import { PrismaClient, type Prisma } from '@prisma/client';
 
-import { CreateArticleBody, UpdateArticleBody, type GetArticlesFeedQueryParams, type GetArticlesQueryParams } from '../routes/Articles';
+import { 
+  type CreateArticleBody, 
+  type UpdateArticleBody, 
+  type GetArticlesFeedQueryParams, 
+  type GetArticlesQueryParams, 
+  type GetArticleParams 
+} from '../routes/Articles';
 import { getUserByUsername } from './usersDao';
 
 const prisma = new PrismaClient();
@@ -82,12 +88,7 @@ export async function getArticlesFeed(queryParams?: GetArticlesFeedQueryParams) 
   });
 }
 
-export async function getArticle(params?: 
-  { 
-    slug?: string;
-    title?: string;
-  }
-) {
+export async function getArticle(params?: GetArticleParams) {
   const filters: Prisma.ArticleWhereInput = {};
 
   if (params?.slug) {
@@ -99,6 +100,7 @@ export async function getArticle(params?:
   return await prisma.article.findFirst({
     include: {
       user: true,
+      comments: params?.includeComments,
     },
     where: filters,
   });
@@ -138,6 +140,24 @@ export async function updateArticle({ userId, articleId, oldTitle, ...params }: 
       user: true,
     },
   });
+}
+
+export async function commentArticle(params: {
+  body: string;
+  articleId: number;
+  userId: number;
+}) {
+  return await prisma.comment.create({
+    data: params,
+  });
+}
+
+export async function deleteComment(commentId: number) {
+  return await prisma.comment.delete({
+    where: { 
+      id: commentId,
+    },
+  })
 }
 
 export async function favoriteArticle(params: {

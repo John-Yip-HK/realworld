@@ -1,9 +1,11 @@
 import { Router, type RequestHandler } from 'express';
-import type { User as PrismaUser } from '@prisma/client';
+import type { Comment as PrismaComment, User as PrismaUser } from '@prisma/client';
 
 import { 
+  commentArticle,
   createArticle, 
   deleteArticle, 
+  deleteComment, 
   favoriteArticle, 
   getArticle, 
   getArticles, 
@@ -29,32 +31,84 @@ import type {
   ArticlePathParams,
   UpdateArticleBody,
   DeleteArticleResponse,
-  RawArticlePathParams
+  RawArticlePathParams,
+  MultipleCommentsResponse,
+  SingleCommentResponse,
+  AddCommentBody
 } from './types';
+import { ResponseObj } from '../../globals';
 
-const { INTERNAL_SERVER_ERROR, NOT_FOUND, BAD_REQUEST, FORBIDDEN, NO_CONTENT } = statusCodes;
+const { 
+  INTERNAL_SERVER_ERROR, 
+  NOT_FOUND, 
+  BAD_REQUEST, 
+  FORBIDDEN, 
+  NO_CONTENT,
+  UNPROCESSABLE_ENTITY,
+} = statusCodes;
 
 const articlesRouter = Router();
+
+interface CommentIdPathParam {
+  commentId: string;
+}
+
+function getArticleAuthorFollowStates(
+  articleAuthorDetails: Pick<PrismaUser, 'email' | 'id' | 'followedUsers'>,
+  currentUser?: Pick<PrismaUser, 'id' | 'email' | 'followedUsers'> | null,
+  ) {
+  if (!currentUser) {
+    return {
+      isFollowingArticleAuthor: false,
+      favorited: false,
+    };
+  }
+
+  const { email: authorEmail, id: authorId, followedUsers: favoritedUserIdList } = articleAuthorDetails;
+  const { id: currentUserId, email: currentUserEmail } = currentUser;
+  const followedUsersOfCurrentUser = new Set(currentUser.followedUsers);
+
+  const isFollowingArticleAuthor = 
+    currentUserEmail !== authorEmail &&
+    followedUsersOfCurrentUser.has(authorId);
+  const favorited = favoritedUserIdList.includes(currentUserId);
+
+  return { isFollowingArticleAuthor, favorited };
+}
+
+function parseRawComments(
+  rawCommentsOrRawComment: PrismaComment | PrismaComment[],
+  articleAuthor: PrismaUser,
+  currentUser?: Pick<PrismaUser, 'id' | 'email' | 'followedUsers'> | null,
+) {
+  const commentsToBeChecked = (rawCommentsOrRawComment instanceof Array) ?
+    rawCommentsOrRawComment :
+    [rawCommentsOrRawComment];
+  
+  return commentsToBeChecked.map(rawComment => {
+    const { articleId, userId, ...otherProps } = rawComment;
+    const { isFollowingArticleAuthor } = getArticleAuthorFollowStates(articleAuthor, currentUser);
+
+    return {
+      ...otherProps,
+      author: handleProfileResponse(articleAuthor, isFollowingArticleAuthor).profile,
+    };
+  });
+}
 
 function parseRawArticles(
   rawArticles: ReturnType<typeof getArticles> extends Promise<infer U> ? U : never,
   currentUser?: Pick<PrismaUser, 'id' | 'email' | 'followedUsers'> | null,
 ) {
-  const currentUserId = currentUser?.id;
-  const currentUserEmail = currentUser?.email;
-  const followedUsersOfCurrentUser = new Set(currentUser?.followedUsers ?? []);
-  
   return rawArticles.map<ArticleObj>(article => {
     const {
       userId,
       user: articleAuthor,
       favoritedUserIdList,
       ...otherAttributes
-    }= article;
-    const isFollowingArticleAuthor = 
-      currentUserEmail !== articleAuthor.email &&
-      followedUsersOfCurrentUser.has(userId);
-    const favorited = favoritedUserIdList.includes(currentUserId ?? -1);
+    } = article;
+
+    const { isFollowingArticleAuthor, favorited } = getArticleAuthorFollowStates(articleAuthor, currentUser);
     
     return {
       ...otherAttributes,
@@ -69,7 +123,28 @@ const checkSlugPresenceMiddleware: RequestHandler<RawArticlePathParams, any, any
   if (!req.params.slug) {
     return res.status(BAD_REQUEST.code).send({
       error: BAD_REQUEST.message,
-      details: 'No article slug found.',
+      details: 'No article slug.',
+    });
+  }
+
+  next();
+}
+
+const checkArticleCommentIdPresenceMiddleware: RequestHandler<Partial<CommentIdPathParam>, any, any, any> = (req, res, next) => {
+  const { commentId } = req.params;
+  
+  if (!req.params.commentId) {
+    return res.status(BAD_REQUEST.code).send({
+      error: BAD_REQUEST.message,
+      details: 'No article comment ID.',
+    });
+  }
+
+  if (Number.isNaN(+commentId!)) {
+    return res.status(UNPROCESSABLE_ENTITY.code).send({
+      errors: {
+        details: ['Comment ID is not a number.'],
+      },
     });
   }
 
@@ -312,6 +387,141 @@ articlesRouter.delete<ArticlePathParams, DeleteArticleResponse, void, void>(
       await deleteArticle(deleteArticleParams);
 
       return res.sendStatus(NO_CONTENT.code);
+    } catch (error) {
+      return res.status(INTERNAL_SERVER_ERROR.code).send({
+        error: INTERNAL_SERVER_ERROR.message,
+        details: JSON.stringify(error),
+      });
+    }
+  }
+);
+
+articlesRouter.get<ArticlePathParams, MultipleCommentsResponse, void, void>(
+  '/:slug/comments',
+  checkSlugPresenceMiddleware,
+  getJwtUserDetailsMiddleware,
+  async (
+    req: RequestWithCurrentUserEmail<ArticlePathParams, MultipleCommentsResponse, void, void>, 
+    res
+  ) => {
+    const { slug } = req.params;
+    const { currentUserEmail } = req;
+
+    try {
+      const currentUser = await getCurrentUser(currentUserEmail);
+      const articleWithComments = await getArticle({
+        slug,
+        includeComments: true,
+      });
+
+      if (!articleWithComments) {
+        return res.status(NOT_FOUND.code).send({
+          error: NOT_FOUND.message,
+          details: 'Such article does not exist.',
+        });
+      }
+
+      const parsedComments = parseRawComments(articleWithComments.comments, articleWithComments.user, currentUser);
+
+      return res.send({
+        comments: parsedComments,
+      });
+    } catch (error) {
+      return res.status(INTERNAL_SERVER_ERROR.code).send({
+        error: INTERNAL_SERVER_ERROR.message,
+        details: JSON.stringify(error),
+      });
+    }
+  }
+);
+
+articlesRouter.post<ArticlePathParams, SingleCommentResponse, AddCommentBody, void>(
+  '/:slug/comments',
+  jwtPassportMiddleware,
+  checkAuthMiddleware,
+  checkSlugPresenceMiddleware,
+  async (req, res) => {
+    const { slug } = req.params;
+    const { email: currentUserEmail } = req.user!;
+    const { comment: { body: commentBody } } = req.body;
+
+    try {
+      const currentUser = (await getCurrentUser(currentUserEmail))!;
+      const articleToComment = await getArticle({ slug });
+
+      if (!articleToComment) {
+        return res.status(NOT_FOUND.code).send({
+          error: NOT_FOUND.message,
+          details: 'Such article does not exist.',
+        });
+      }
+
+      const postedComment = await commentArticle({
+        body: commentBody,
+        articleId: articleToComment.id,
+        userId: currentUser.id,
+      });
+
+      const parsedComment = parseRawComments(postedComment, currentUser)[0];
+
+      return res.send({
+        comment: parsedComment,
+      });
+    } catch (error) {
+      return res.status(INTERNAL_SERVER_ERROR.code).send({
+        error: INTERNAL_SERVER_ERROR.message,
+        details: JSON.stringify(error),
+      });
+    }
+  }
+);
+
+articlesRouter.delete<ArticlePathParams & CommentIdPathParam, ResponseObj<void>, void, void>(
+  '/:slug/comments/:commentId',
+  jwtPassportMiddleware,
+  checkAuthMiddleware,
+  checkSlugPresenceMiddleware,
+  checkArticleCommentIdPresenceMiddleware,
+  async (req, res) => {
+    const { slug, commentId: rawCommentId } = req.params;
+    const { email: currentUserEmail } = req.user!;
+    const commentId = +rawCommentId;
+
+    try {
+      const currentUser = (await getCurrentUser(currentUserEmail))!;
+      const articleWithCommentToBeDeleted = await getArticle({ 
+        slug, 
+        includeComments: true, 
+      });
+
+      if (!articleWithCommentToBeDeleted) {
+        return res.status(NOT_FOUND.code).send({
+          error: NOT_FOUND.message,
+          details: 'Such article does not exist.',
+        });
+      }
+
+      const commentToBeDeleted = articleWithCommentToBeDeleted.comments.find(
+        comment => comment.id === commentId
+      );
+
+      if (!commentToBeDeleted) {
+        return res.status(NOT_FOUND.code).send({
+          error: NOT_FOUND.message,
+          details: 'Such comment does not exist.',
+        });
+      }
+      
+      if (commentToBeDeleted.userId !== currentUser.id) {
+        return res.status(FORBIDDEN.code).send({
+          error: FORBIDDEN.message,
+          details: 'Cannot delete other user\'s comment.',
+        });
+      }
+
+      await deleteComment(commentId);
+
+      return res.sendStatus(204);
     } catch (error) {
       return res.status(INTERNAL_SERVER_ERROR.code).send({
         error: INTERNAL_SERVER_ERROR.message,

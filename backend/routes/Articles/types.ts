@@ -1,6 +1,6 @@
-import type { Article, User } from '@prisma/client';
+import type { Article, User, Comment } from '@prisma/client';
 import { type Profile } from '../Profile';
-import { type ErrorResponse } from '../../globals';
+import type { ResponseObj } from '../../globals';
 
 interface ArticleObj extends Omit<Article, 'id' | 'userId' | 'user' | 'favoritedUserIdList'> {
   author: Profile;
@@ -8,16 +8,16 @@ interface ArticleObj extends Omit<Article, 'id' | 'userId' | 'user' | 'favorited
   favoritesCount: number;
 }
 
-type MultipleArticlesResponse = {
+type MultipleArticlesResponse = ResponseObj<{
   articles: ArticleObj[];
   articlesCount: number;
-} | ErrorResponse;
+}>;
 
-type SingleArticleResponse = {
+type SingleArticleResponse = ResponseObj<{
   article: ArticleObj;
-} | ErrorResponse;
+}>;
 
-type DeleteArticleResponse = void | ErrorResponse;
+type DeleteArticleResponse = ResponseObj<void>;
 
 interface GetArticlesQueryParams {
   tag?: string;
@@ -25,6 +25,12 @@ interface GetArticlesQueryParams {
   favorited?: string;
   offset?: number;
   limit?: number;
+}
+
+interface GetArticleParams {
+  slug?: string;
+  title?: string;
+  includeComments?: boolean;
 }
 
 interface ArticlePathParams {
@@ -50,6 +56,24 @@ interface UpdateArticleBody {
   article: Partial<CreateArticleBody['article']>;
 }
 
+interface CommentObj extends Omit<Comment, 'userId' | 'articleId'> {
+  author: Profile;
+}
+
+type MultipleCommentsResponse = ResponseObj<{
+  comments: CommentObj[];
+}>
+
+type SingleCommentResponse = ResponseObj<{
+  comment: CommentObj;
+}>
+
+interface AddCommentBody {
+  comment: {
+    body: string;
+  }
+}
+
 export type {
   ArticleObj,
   MultipleArticlesResponse,
@@ -61,4 +85,8 @@ export type {
   UpdateArticleBody,
   ArticlePathParams,
   RawArticlePathParams,
+  MultipleCommentsResponse,
+  GetArticleParams,
+  SingleCommentResponse,
+  AddCommentBody,
 }

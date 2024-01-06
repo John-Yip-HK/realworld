@@ -117,6 +117,14 @@ async function main() {
             }
           ],
         },
+        comments: {
+          create: [
+            {
+              body: 'This is a comment',
+              articleId: 1,
+            },
+          ]
+        },
       },
     });
 
