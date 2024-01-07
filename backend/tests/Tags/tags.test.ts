@@ -1,6 +1,4 @@
 import type { Response, Request } from 'express';
-import { vi, test, expect } from 'vitest';
-
 import { getTagsController } from '../../controllers/tagsController';
 
 import { tags } from '../../constants/tags';
