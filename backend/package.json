@@ -6,7 +6,7 @@
     "start": "bun app.ts",
     "start:dev": "bun --hot run app.ts",
     "lint": "eslint",
-    "test": "vitest -c ./vite.config.ts"
+    "test:vitest": "vitest"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",

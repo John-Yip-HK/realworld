@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 
 import { comparePassword, hashPassword } from '../utils/passwordUtils';
 import { signJwt } from '../utils/jwtUtils';
