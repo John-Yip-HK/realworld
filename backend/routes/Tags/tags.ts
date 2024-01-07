@@ -1,24 +1,10 @@
 import { Router } from 'express';
 
-import type { Tag } from './types';
+import { getTagsController } from '../../controllers/tagsController';
+import { type TagResponse } from '.';
 
 const tagsRouter = Router();
 
-const tags: Tag[] = [
-  'welcome',
-  'implementations',
-  'introduction',
-  'codebaseShow',
-  'ipsum',
-  'et',
-  'cupiditate',
-  'qui',
-  'quia',
-  'deserunt',
-];
-
-tagsRouter.get('/', (_, res) => {
-  res.send({ tags });
-});
+tagsRouter.get<void, TagResponse, void, void>('/', getTagsController);
 
 export { tagsRouter };
