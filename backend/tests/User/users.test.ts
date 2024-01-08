@@ -10,27 +10,10 @@ import { UserResponse, UserCredentials } from '../../routes/User';
 
 import statusCodes from '../../constants/status-codes';
 
-type ImportOriginalAsyncFunction = Parameters<NonNullable<Parameters<typeof vi.mock>[1]>>[0];
-
-async function mockImportFactory(importOriginal: ImportOriginalAsyncFunction) {
-  const originalImports = await importOriginal<object>();
-  
-  return Object.keys(originalImports)
-    .reduce((object, importKey) => {
-      object[importKey] = vi.fn();
-
-      return object;
-    }, {} as Record<string, Mock>);
-}
-
-vi.mock('../../dao/usersDao', mockImportFactory);
-vi.mock('../../utils/passwordUtils', mockImportFactory);
-vi.mock('bun', () => ({
-  // Used by `../../utils/passwordUtils`
-  password: vi.fn(),
-}));
-vi.mock('../../utils/jwtUtils', mockImportFactory);
-vi.mock('../../utils/handleUserResponseUtils', mockImportFactory);
+vi.mock('../../utils/passwordUtils');
+vi.mock('../../utils/jwtUtils');
+vi.mock('../../utils/handleUserResponseUtils');
+vi.mock('../../dao/usersDao');
 
 const { BAD_REQUEST, UNPROCESSABLE_ENTITY, INTERNAL_SERVER_ERROR, CREATED, FORBIDDEN } = statusCodes;
 
