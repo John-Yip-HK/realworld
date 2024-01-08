@@ -139,7 +139,7 @@ export async function unfollowUser(
 
     const { followedUsers } = currentUser;
 
-    const updatedCurrentUser = await updateUserByEmail(currentUserEmail, { 
+    const updatedCurrentUser = await updateUserByEmail(currentUserEmail, {
       followedUsers: followedUsers
         .filter(idOfFollowedUser => 
           idOfFollowedUser !== foundUser.id
