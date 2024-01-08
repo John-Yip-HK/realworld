@@ -2,7 +2,7 @@ import { type Response, type Request } from 'express';
 
 import statusCodes from '../constants/status-codes';
 
-import { handleUserResponse } from '../utils/handleUserResponseUtils';
+import { handleUserResponse, hasFollowedUsers } from '../utils/handleUserResponseUtils';
 import { hashPassword } from '../utils/passwordUtils';
 import { signJwt } from '../utils/jwtUtils';
 import { getUserByEmail, getUserByUsername, updateUserByEmail } from '../dao/usersDao';
@@ -10,6 +10,19 @@ import { getUserByEmail, getUserByUsername, updateUserByEmail } from '../dao/use
 import { type UserReqBody, type UserResponse } from '../routes/User';
 
 const { BAD_REQUEST, UNPROCESSABLE_ENTITY, INTERNAL_SERVER_ERROR } = statusCodes;
+
+function getCurrentUserController(
+  req: Request<void, UserResponse, void>,
+  res: Response<UserResponse>
+) {
+  const currentUser = req.user!;
+  const otherFields = hasFollowedUsers(currentUser) ? (() => {
+    const { followedUsers, ...filteredFields } = currentUser;
+    return filteredFields;
+  })() : currentUser;
+  
+  return res.send({ user: otherFields, });
+}
 
 async function updateCurrentUserController(
   req: Request<void, UserResponse, UserReqBody>,
@@ -20,7 +33,9 @@ async function updateCurrentUserController(
 
   if (!newUserDetails || !newUserDetails.user) {
     return res.status(BAD_REQUEST.code).send({
-      error: 'No new user details.',
+      errors: {
+        newUser: ['no details'],
+      },
     });
   }
 
@@ -75,7 +90,7 @@ async function updateCurrentUserController(
       error: 'Cannot update user details',
       details: error,
     })
-  }  
+  }
 }
 
-export { updateCurrentUserController }
+export { updateCurrentUserController, getCurrentUserController }
