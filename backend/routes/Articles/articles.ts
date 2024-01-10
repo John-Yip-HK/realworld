@@ -37,6 +37,7 @@ import type {
   AddCommentBody
 } from './types';
 import { ResponseObj } from '../../globals';
+import { createArticleController, getArticlesController, getArticlesFeedController, getSingleArticleController } from '../../controllers/articles/articlesController';
 
 const { 
   INTERNAL_SERVER_ERROR, 
@@ -160,149 +161,28 @@ async function getCurrentUser(currentUserEmail?: string) {
 articlesRouter.get<void, MultipleArticlesResponse, void, GetArticlesQueryParams>(
   '/',
   getJwtUserDetailsMiddleware,
-  async (
-    req: RequestWithCurrentUserEmail<void, MultipleArticlesResponse, void, GetArticlesQueryParams>, 
-    res
-  ) => {
-    try {
-      const { currentUserEmail, query } = req;
-      const currentUser = await getCurrentUser(currentUserEmail);
-      const rawArticles = await getArticles(query);
-      const articles = parseRawArticles(rawArticles, currentUser);
-      
-      return res.send({
-        articles: articles,
-        articlesCount: articles.length,
-      });
-    } catch (error) {
-      if (error instanceof Error) {
-        if (error.message === 'The favorited user does not exist.') {
-          return res.status(NOT_FOUND.code).send({
-            error: NOT_FOUND.message,
-            details: error.message,
-          });
-        } 
-
-        return res.status(BAD_REQUEST.code).send({
-          error: BAD_REQUEST.message,
-          details: JSON.stringify(error),
-        });
-      }
-      
-      return res.status(INTERNAL_SERVER_ERROR.code).send({
-        error: INTERNAL_SERVER_ERROR.message,
-        details: JSON.stringify(error),
-      });
-    }
-  }
+  getArticlesController
 );
 
 articlesRouter.get<void, MultipleArticlesResponse, void, GetArticlesFeedQueryParams>(
   '/feed', 
   jwtPassportMiddleware,
   checkAuthMiddleware,
-  async (req, res) => {
-    const { query } = req;
-
-    try {
-      const currentUser = await getCurrentUser(req.user!.email);
-      const { followedUsers } = currentUser!;
-      const resultRawArticles = await getArticlesFeed({
-        ...query,
-        followedUsers,
-      });
-      const articles = parseRawArticles(resultRawArticles, currentUser);
-      
-      return res.send({
-        articles,
-        articlesCount: followedUsers.length,
-      });
-    } catch (error) {
-      if (error instanceof Error) {
-        return res.status(BAD_REQUEST.code).send({
-          error: BAD_REQUEST.message,
-          details: JSON.stringify(error),
-        });
-      }
-      
-      return res.status(INTERNAL_SERVER_ERROR.code).send({
-        error: INTERNAL_SERVER_ERROR.message,
-        details: JSON.stringify(error),
-      });
-    }
-  }
+  getArticlesFeedController
 );
 
 articlesRouter.post<void, SingleArticleResponse, CreateArticleBody, void>(
   '/',
   jwtPassportMiddleware,
   checkAuthMiddleware,
-  async (req, res) => {
-    try {
-      const currentUser = await getCurrentUser(req.user!.email);
-      const { id: userId } = currentUser!;
-
-      const articleWithTheSameTitle = await getArticle({ title: req.body.article.title, });
-
-      if (articleWithTheSameTitle) {
-        return res.status(BAD_REQUEST.code).send({
-          error: BAD_REQUEST.message,
-          details: 'Article with the same title already exists.',
-        });
-      }
-      
-      const createArticleParams = {
-        ...req.body.article,
-        userId,
-      };
-      const createdRawArticle = await createArticle(createArticleParams);
-      const createdArticle = parseRawArticles([createdRawArticle], currentUser)[0];
-
-      return res.send({
-        article: createdArticle,
-      });
-    } catch (error) {
-      return res.status(INTERNAL_SERVER_ERROR.code).send({
-        error: INTERNAL_SERVER_ERROR.message,
-        details: JSON.stringify(error),
-      });
-    }
-  }
+  createArticleController
 );
 
 articlesRouter.get<ArticlePathParams, SingleArticleResponse, void, void>(
   '/:slug', 
   getJwtUserDetailsMiddleware,
   checkSlugPresenceMiddleware,
-  async (
-    req: RequestWithCurrentUserEmail<ArticlePathParams, SingleArticleResponse, void, void>, 
-    res
-  ) => {
-    const { currentUserEmail, params: { slug } } = req;
-
-    try {      
-      const currentUser = await getCurrentUser(currentUserEmail);
-      const rawArticle = await getArticle({ slug });
-
-      if (!rawArticle) {
-        return res.status(NOT_FOUND.code).send({
-          error: NOT_FOUND.message,
-          details: 'Such article does not exist.',
-        });
-      }
-
-      const article = parseRawArticles([rawArticle], currentUser)[0];
-
-      return res.send({
-        article,
-      });
-    } catch (error) {
-      return res.status(INTERNAL_SERVER_ERROR.code).send({
-        error: INTERNAL_SERVER_ERROR.message,
-        details: JSON.stringify(error),
-      });
-    }
-  }
+  getSingleArticleController
 );
 
 articlesRouter.put<ArticlePathParams, SingleArticleResponse, UpdateArticleBody, void>(
