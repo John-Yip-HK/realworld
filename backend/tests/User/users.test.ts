@@ -6,16 +6,24 @@ import { comparePassword, hashPassword } from '../../utils/passwordUtils';
 import { signJwt } from '../../utils/jwtUtils';
 import { handleUserResponse } from '../../utils/handleUserResponseUtils';
 import { registerUserController, logInUserController } from '../../controllers/usersController';
-import { UserResponse, UserCredentials } from '../../routes/User';
+import prisma from '../../prisma/__mocks__/client';
+import { password } from '../../__mocks__/bun';
+import * as jwt from '../../__mocks__/jsonwebtoken'; 
 
 import statusCodes from '../../constants/status-codes';
+import { DEFAULT_IMAGE_URL } from '../../constants/users';
 
-vi.mock('../../utils/passwordUtils');
-vi.mock('../../utils/jwtUtils');
+import type { UserResponse, UserCredentials } from '../../routes/User';
+
+const { 
+  BAD_REQUEST, 
+  UNPROCESSABLE_ENTITY, 
+  INTERNAL_SERVER_ERROR, 
+  CREATED, 
+  FORBIDDEN 
+} = statusCodes;
+
 vi.mock('../../utils/handleUserResponseUtils');
-vi.mock('../../dao/usersDao');
-
-const { BAD_REQUEST, UNPROCESSABLE_ENTITY, INTERNAL_SERVER_ERROR, CREATED, FORBIDDEN } = statusCodes;
 
 describe('registerUserController', () => {
   let req: Request<void, UserResponse, { user: UserCredentials }>;
@@ -38,13 +46,11 @@ describe('registerUserController', () => {
     } as unknown as Response<UserResponse>;
   });
 
-  afterEach(() => {
-    vi.clearAllMocks();
-  });
-
   test('should return BAD_REQUEST if required fields are missing', async () => {
     req.body.user.email = '';
+
     await registerUserController(req, res);
+
     expect(res.status).toHaveBeenCalledWith(BAD_REQUEST.code);
     expect(res.send).toHaveBeenCalledWith({
       errors: {
@@ -54,7 +60,9 @@ describe('registerUserController', () => {
 
     req.body.user.email = 'test@example.com';
     req.body.user.username = '';
+
     await registerUserController(req, res);
+
     expect(res.status).toHaveBeenCalledWith(BAD_REQUEST.code);
     expect(res.send).toHaveBeenCalledWith({
       errors: {
@@ -64,7 +72,9 @@ describe('registerUserController', () => {
 
     req.body.user.username = 'testuser';
     req.body.user.password = '';
+
     await registerUserController(req, res);
+
     expect(res.status).toHaveBeenCalledWith(BAD_REQUEST.code);
     expect(res.send).toHaveBeenCalledWith({
       errors: {
@@ -74,8 +84,18 @@ describe('registerUserController', () => {
   });
 
   test('should return UNPROCESSABLE_ENTITY if user with same email or username already exists', async () => {
-    (getUserByEmail as Mock).mockResolvedValueOnce({ email: 'test@example.com' });
+    prisma.user.findUnique.mockResolvedValueOnce({ 
+      id: 1,
+      username: 'testuser',
+      email: 'test@example.com',
+      hashedPassword: 'hashedPassword',
+      bio: null,
+      image: '',
+      followedUsers: [],
+    });
+
     await registerUserController(req, res);
+
     expect(res.status).toHaveBeenCalledWith(UNPROCESSABLE_ENTITY.code);
     expect(res.send).toHaveBeenCalledWith({
       errors: {
@@ -83,9 +103,20 @@ describe('registerUserController', () => {
       },
     });
 
-    (getUserByEmail as Mock).mockResolvedValueOnce(null);
-    (getUserByUsername as Mock).mockResolvedValueOnce({ username: 'testuser' });
+    prisma.user.findUnique
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ 
+        id: 1,
+        username: 'testuser',
+        email: 'test@example.com',
+        hashedPassword: 'hashedPassword',
+        bio: null,
+        image: '',
+        followedUsers: [],
+      });
+
     await registerUserController(req, res);
+
     expect(res.status).toHaveBeenCalledWith(UNPROCESSABLE_ENTITY.code);
     expect(res.send).toHaveBeenCalledWith({
       errors: {
@@ -95,37 +126,43 @@ describe('registerUserController', () => {
   });
 
   test('should create a new user and return CREATED status with user data and auth token', async () => {
-    (getUserByEmail as Mock).mockResolvedValueOnce(null);
-    (getUserByUsername as Mock).mockResolvedValueOnce(null);
-    (hashPassword as Mock).mockResolvedValueOnce('hashedPassword');
-    (createUser as Mock).mockResolvedValueOnce({
+    const mockHashedPassword = 'hashedPassword';
+    const mockAuthToken = 'authToken';
+    const mockCreatedUser = {
+      id: 1,
       email: 'test@example.com',
       username: 'testuser',
-    });
-    (signJwt as Mock).mockReturnValueOnce('authToken');
-    (handleUserResponse as Mock).mockReturnValueOnce({
-      user: {
-        email: 'test@example.com',
-        username: 'testuser',
-      },
-      token: 'authToken',
-    });
+      hashedPassword: mockHashedPassword,
+      bio: null,
+      image: '',
+      followedUsers: [],
+    };
+    
+    password.hash.mockResolvedValueOnce(mockHashedPassword);
+    prisma.user.findUnique.mockResolvedValue(null);
+    prisma.user.create.mockResolvedValue(mockCreatedUser);
+    jwt.sign.mockImplementationOnce(() => mockAuthToken);
 
     await registerUserController(req, res);
-    expect(res.status).toHaveBeenCalledWith(CREATED.code);
-    expect(res.send).toHaveBeenCalledWith({
-      user: {
+
+    expect(prisma.user.create).toHaveBeenCalledWith({
+      data: {
         email: 'test@example.com',
         username: 'testuser',
-      },
-      token: 'authToken',
+        hashedPassword: mockHashedPassword,
+        image: DEFAULT_IMAGE_URL
+      }
     });
+    expect(res.status).toHaveBeenCalledWith(CREATED.code);
+    expect(jwt.sign.mock.calls[0][0]).toEqual({ email: mockCreatedUser.email });
+    expect(handleUserResponse).toHaveBeenCalledWith(mockCreatedUser, mockAuthToken);
   });
 
   test('should return INTERNAL_SERVER_ERROR if an error occurs during registration', async () => {
-    (getUserByEmail as Mock).mockRejectedValueOnce(new Error('Database error'));
+    prisma.user.findUnique.mockRejectedValueOnce(new Error('Database error'));
 
     await registerUserController(req, res);
+
     expect(res.status).toHaveBeenCalledWith(INTERNAL_SERVER_ERROR.code);
     expect(res.send).toHaveBeenCalledWith({
       error: 'Cannot register user',

@@ -1,9 +1,9 @@
-import { PrismaClient, type User } from '@prisma/client';
+import { type User } from '@prisma/client';
+
+import prisma from '../prisma/client';
 
 import { DEFAULT_IMAGE_URL } from '../constants/users';
-import { AmendableUserFields } from '../routes/User';
-
-const prisma = new PrismaClient();
+import type { AmendableUserFields } from '../routes/User';
 
 /**
  * Retrieves a user from the database based on their email.
