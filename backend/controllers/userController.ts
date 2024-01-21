@@ -21,7 +21,7 @@ function getCurrentUserController(
     return filteredFields;
   })() : currentUser;
   
-  return res.send({ user: otherFields, });
+  return res.send({ user: otherFields });
 }
 
 async function updateCurrentUserController(
