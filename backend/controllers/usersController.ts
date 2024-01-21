@@ -129,7 +129,7 @@ async function logInUserController(
       return res.status(FORBIDDEN.code).send(invalidCredentialsError);
     }
 
-    const authToken = signJwt({ email, });
+    const authToken = signJwt({ email });
 
     return res.status(CREATED.code).send(handleUserResponse(user, authToken));
   } catch (error) {

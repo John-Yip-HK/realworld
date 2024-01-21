@@ -1,9 +1,6 @@
 import type { Request, Response } from 'express';
-import { Mock } from 'vitest';
+import type { User as PrismaUser } from '@prisma/client';
 
-import { createUser, getUserByEmail, getUserByUsername } from '../../dao/usersDao';
-import { comparePassword, hashPassword } from '../../utils/passwordUtils';
-import { signJwt } from '../../utils/jwtUtils';
 import { handleUserResponse } from '../../utils/handleUserResponseUtils';
 import { registerUserController, logInUserController } from '../../controllers/usersController';
 import prisma from '../../prisma/__mocks__/client';
@@ -174,6 +171,7 @@ describe('registerUserController', () => {
 describe('logInUserController', () => {
   let req: Request<void, UserResponse, { user: Omit<UserCredentials, 'username'> }>;
   let res: Response<UserResponse>;
+  let dummyUser: PrismaUser;
 
   beforeEach(() => {
     req = {
@@ -189,15 +187,23 @@ describe('logInUserController', () => {
       status: vi.fn().mockReturnThis(),
       send: vi.fn(),
     } as unknown as Response<UserResponse>;
-  });
 
-  afterEach(() => {
-    vi.clearAllMocks();
+    dummyUser = {
+      id: 1,
+      username: 'testuser',
+      email: 'test@example.com',
+      hashedPassword: 'hashedPassword',
+      bio: null,
+      image: '',
+      followedUsers: [],
+    };
   });
 
   test('should return BAD_REQUEST if required fields are missing', async () => {
     req.body.user.email = '';
+
     await logInUserController(req, res);
+
     expect(res.status).toHaveBeenCalledWith(BAD_REQUEST.code);
     expect(res.send).toHaveBeenCalledWith({
       errors: {
@@ -207,7 +213,9 @@ describe('logInUserController', () => {
 
     req.body.user.email = 'test@example.com';
     req.body.user.password = '';
+
     await logInUserController(req, res);
+
     expect(res.status).toHaveBeenCalledWith(BAD_REQUEST.code);
     expect(res.send).toHaveBeenCalledWith({
       errors: {
@@ -217,9 +225,10 @@ describe('logInUserController', () => {
   });
 
   test('should return FORBIDDEN if user with the provided email does not exist', async () => {
-    (getUserByEmail as Mock).mockResolvedValueOnce(null);
+    prisma.user.findUnique.mockResolvedValueOnce(null);
 
     await logInUserController(req, res);
+
     expect(res.status).toHaveBeenCalledWith(FORBIDDEN.code);
     expect(res.send).toHaveBeenCalledWith({
       errors: {
@@ -229,13 +238,12 @@ describe('logInUserController', () => {
   });
 
   test('should return FORBIDDEN if provided password is incorrect', async () => {
-    (getUserByEmail as Mock).mockResolvedValueOnce({
-      email: 'test@example.com',
-      hashedPassword: 'hashedPassword',
-    });
-    (comparePassword as Mock).mockResolvedValueOnce(false);
+    prisma.user.findUnique.mockResolvedValueOnce(dummyUser);
+    password.verify.mockResolvedValueOnce(false);
 
     await logInUserController(req, res);
+
+    expect(password.verify).toHaveBeenCalledWith(req.body.user.password, dummyUser.hashedPassword);
     expect(res.status).toHaveBeenCalledWith(FORBIDDEN.code);
     expect(res.send).toHaveBeenCalledWith({
       errors: {
@@ -245,35 +253,25 @@ describe('logInUserController', () => {
   });
 
   test('should return CREATED status with user data and auth token if login is successful', async () => {
-    (getUserByEmail as Mock).mockResolvedValueOnce({
-      email: 'test@example.com',
-      hashedPassword: 'hashedPassword',
-    });
-    (comparePassword as Mock).mockResolvedValueOnce(true);
-    (signJwt as Mock).mockReturnValueOnce('authToken');
-    (handleUserResponse as Mock).mockReturnValueOnce({
-      user: {
-        email: 'test@example.com',
-        username: 'testuser',
-      },
-      token: 'authToken',
-    });
+    const dummyToken = 'authToken'; 
+    
+    prisma.user.findUnique.mockResolvedValueOnce(dummyUser);
+    password.verify.mockResolvedValueOnce(true);
+
+    jwt.sign.mockImplementationOnce(() => dummyToken);
 
     await logInUserController(req, res);
+
     expect(res.status).toHaveBeenCalledWith(CREATED.code);
-    expect(res.send).toHaveBeenCalledWith({
-      user: {
-        email: 'test@example.com',
-        username: 'testuser',
-      },
-      token: 'authToken',
-    });
+    expect(jwt.sign.mock.calls[0][0]).toStrictEqual({ email: dummyUser.email });
+    expect(handleUserResponse).toHaveBeenCalledWith(dummyUser, dummyToken);
   });
 
   test('should return INTERNAL_SERVER_ERROR if an error occurs during login', async () => {
-    (getUserByEmail as Mock).mockRejectedValueOnce(new Error('Database error'));
+    prisma.user.findUnique.mockRejectedValueOnce(new Error('Database error'));
 
     await logInUserController(req, res);
+
     expect(res.status).toHaveBeenCalledWith(INTERNAL_SERVER_ERROR.code);
     expect(res.send).toHaveBeenCalledWith({
       error: 'Cannot login',
