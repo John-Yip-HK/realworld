@@ -7,7 +7,7 @@ import statusCodes from '../constants/status-codes';
 
 import { type User } from '../routes/User';
 
-const { INTERNAL_SERVER_ERROR, NOT_FOUND, UNPROCESSABLE_ENTITY } = statusCodes;
+const { INTERNAL_SERVER_ERROR, NOT_FOUND, UNPROCESSABLE_ENTITY, BAD_REQUEST } = statusCodes;
 
 export async function getProfileByUsername(
   req: ProfileRequest,
@@ -93,6 +93,13 @@ export async function followUser(
 
     const updateSuccessful = updatedCurrentUser.followedUsers.includes(foundUser.id);
 
+    if (!updateSuccessful) {
+      return res.status(BAD_REQUEST.code).send({
+        error: BAD_REQUEST.message,
+        details: 'Failed to follow user for unknown reason. Please try again later.',
+      });
+    }
+
     return res.send(handleProfileResponse(foundUser, updateSuccessful));
   } catch (error) {
     return res.status(INTERNAL_SERVER_ERROR.code).send({
@@ -146,9 +153,16 @@ export async function unfollowUser(
         ), 
     });
 
-    const unfollowResult = updatedCurrentUser.followedUsers.includes(foundUser.id);
+    const currentUserIsFollowingFoundUser = updatedCurrentUser.followedUsers.includes(foundUser.id);
 
-    return res.send(handleProfileResponse(foundUser, unfollowResult));
+    if (currentUserIsFollowingFoundUser) {
+      return res.status(BAD_REQUEST.code).send({
+        error: BAD_REQUEST.message,
+        details: 'Failed to unfollow user for unknown reason. Please try again later.',
+      });
+    }
+
+    return res.send(handleProfileResponse(foundUser, currentUserIsFollowingFoundUser));
   } catch (error) {
     return res.status(INTERNAL_SERVER_ERROR.code).send({
       error: INTERNAL_SERVER_ERROR.message,
