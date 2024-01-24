@@ -11,7 +11,7 @@ import type { ArticleObj } from '../../routes/Articles';
 
 export type RawArticles = ReturnType<typeof getArticles> extends Promise<infer U> ? U : never;
 
-function getArticleAuthorFollowStates(
+export function getArticleAuthorFollowStates(
   articleAuthorDetails: Pick<PrismaUser, 'email' | 'id'>,
   currentUser?: Pick<PrismaUser, 'id' | 'email' | 'followedUsers'> | null,
   ) {
