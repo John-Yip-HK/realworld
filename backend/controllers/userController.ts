@@ -3,7 +3,7 @@ import { type Response, type Request } from 'express';
 import statusCodes from '../constants/status-codes';
 
 import { handleUserResponse, hasFollowedUsers } from '../utils/handleUserResponseUtils';
-import { hashPassword } from '../utils/passwordUtils';
+import { comparePassword, hashPassword } from '../utils/passwordUtils';
 import { signJwt } from '../utils/jwtUtils';
 import { getUserByEmail, getUserByUsername, updateUserByEmail } from '../dao/usersDao';
 
@@ -29,7 +29,7 @@ async function updateCurrentUserController(
   res: Response<UserResponse>
 ) {
   const { body: newUserDetails, user } = req;
-  const { email, token } = user!;
+  const { email, token, username } = user!;
 
   if (!newUserDetails || !newUserDetails.user) {
     return res.status(BAD_REQUEST.code).send({
@@ -44,9 +44,25 @@ async function updateCurrentUserController(
       .entries(newUserDetails.user)
       .filter(([key, value]) => key === 'bio' || Boolean(value))
   );
-  const isUsernameChanged = 'username' in sanitisedNewUserDetails && Boolean(sanitisedNewUserDetails.username);
-  const isEmailChanged = 'email' in sanitisedNewUserDetails && Boolean(sanitisedNewUserDetails.email);
-  const isPasswordChanged = 'password' in sanitisedNewUserDetails && Boolean(sanitisedNewUserDetails.password);
+  const isUsernameChanged = 
+    'username' in sanitisedNewUserDetails && 
+    Boolean(sanitisedNewUserDetails.username) &&
+    sanitisedNewUserDetails.username !== username;
+  const isEmailChanged = 
+    'email' in sanitisedNewUserDetails &&
+    Boolean(sanitisedNewUserDetails.email) &&
+    sanitisedNewUserDetails.email !== email;
+  const isTryingToChangePassword = 
+    'password' in sanitisedNewUserDetails && 
+    Boolean(sanitisedNewUserDetails.password);
+
+  if (!isUsernameChanged) {
+    delete sanitisedNewUserDetails.username;
+  }
+
+  if (!isEmailChanged) {
+    delete sanitisedNewUserDetails.email;
+  }
 
   try {
     const [userWithSameUsername, userWithSameEmail] = await Promise.all([
@@ -70,20 +86,31 @@ async function updateCurrentUserController(
       });
     }
     
-    if (isPasswordChanged) {
-      const newHashedPassword = await hashPassword(sanitisedNewUserDetails.password!);
-      delete sanitisedNewUserDetails['password'];
-      sanitisedNewUserDetails.hashedPassword = newHashedPassword;
+    if (isTryingToChangePassword) {
+      const newPassword = sanitisedNewUserDetails.password!;
+      const currentUser = await getUserByEmail(email);
+      const currentUserHashedPassword = currentUser!.hashedPassword;
+      const isNewPasswordTheSameAsCurrentPassword = await comparePassword(newPassword, currentUserHashedPassword)
+      
+      if (isNewPasswordTheSameAsCurrentPassword) {
+        return res.status(UNPROCESSABLE_ENTITY.code).send({
+          errors: {
+            password: ['cannot be the same as the current password.'],
+          },
+        });
+      }
+      else {
+        const newHashedPassword = await hashPassword(newPassword);
+
+        sanitisedNewUserDetails.hashedPassword = newHashedPassword;
+        
+        delete sanitisedNewUserDetails.password;
+      }
     }
     
     const updateUserResult = await updateUserByEmail(email, sanitisedNewUserDetails);
+    const tokenToBeReturned = isEmailChanged ? signJwt({ email: updateUserResult.email }) : token;
 
-    let tokenToBeReturned = token;
-
-    if (isEmailChanged) {
-      tokenToBeReturned = signJwt({ email: updateUserResult.email });
-    }
-    
     return res.send(handleUserResponse(updateUserResult, tokenToBeReturned));
   } catch (error) {
     return res.status(INTERNAL_SERVER_ERROR.code).send({

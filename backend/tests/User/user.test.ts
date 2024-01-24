@@ -2,9 +2,10 @@ import type { Request, Response } from 'express';
 import type { User as PrismaUser } from '@prisma/client';
 
 import { getCurrentUserController, updateCurrentUserController } from '../../controllers/userController';
-import { handleUserResponse, hasFollowedUsers } from '../../utils/handleUserResponseUtils';
+import * as handleUserResponseUtils from '../../utils/handleUserResponseUtils';
 import prisma from '../../prisma/__mocks__/client';
 import * as jwt from '../../__mocks__/jsonwebtoken';
+import { password } from '../../__mocks__/bun';
 
 import statusCodes from '../../constants/status-codes';
 
@@ -21,7 +22,6 @@ describe('getCurrentUserController', async () => {
       email: 'john@example.com',
     },
   };
-  const handleUserResponseUtils = await import('../../utils/handleUserResponseUtils');
 
   beforeEach(async () => {
     req = {
@@ -42,7 +42,7 @@ describe('getCurrentUserController', async () => {
   test('should return current user with filtered fields if user has followed users', () => {
     getCurrentUserController(req, res);
 
-    expect(hasFollowedUsers).toHaveBeenCalledWith(req.user);
+    expect(handleUserResponseUtils.hasFollowedUsers).toHaveBeenCalledWith(req.user);
     expect(res.send).toHaveBeenCalledTimes(1);
     expect(res.send).toHaveBeenCalledWith(resultingObject);
   });
@@ -52,7 +52,7 @@ describe('getCurrentUserController', async () => {
     
     getCurrentUserController(req, res);
 
-    expect(hasFollowedUsers).toHaveBeenCalledWith(req.user);
+    expect(handleUserResponseUtils.hasFollowedUsers).toHaveBeenCalledWith(req.user);
     expect(res.send).toHaveBeenCalledTimes(1);
     expect(res.send).toHaveBeenCalledWith(resultingObject);
   });
@@ -61,26 +61,19 @@ describe('getCurrentUserController', async () => {
 describe('updateCurrentUserController', () => {
   let req: Request<void, UserResponse, UserReqBody>;
   let res: Response<UserResponse>;
-  let originalUser = { 
-    id: 1,
-    username: 'test',
-    email: 'test@test.com',
-    hashedPassword: 'hashedPassword',
-    bio: null,
-    image: 'image',
-    followedUsers: [],
-  };
+  let originalUser: PrismaUser;
 
   beforeEach(() => {
     req = {
       body: {
         user: {
-          username: 'test',
-          email: 'test@test.com',
-          password: 'password',
+          username: 'updatedTest',
+          email: 'updatedTest@test.com',
+          password: 'updatedPassword',
         },
       },
       user: {
+        username: 'test',
         email: 'test@test.com',
         token: 'token',
       },
@@ -90,6 +83,16 @@ describe('updateCurrentUserController', () => {
       status: vi.fn().mockReturnThis(),
       send: vi.fn(),
     } as unknown as Response<UserResponse>;
+
+    originalUser = { 
+      id: 1,
+      username: 'test',
+      email: 'test@test.com',
+      hashedPassword: 'hashedPassword',
+      bio: null,
+      image: 'image',
+      followedUsers: [],
+    };
   });
 
   it('should return BAD_REQUEST if newUserDetails or newUserDetails.user is not provided', async () => {
@@ -144,6 +147,26 @@ describe('updateCurrentUserController', () => {
     });
   });
 
+  it.only('should return UNPROCESSABLE_ENTITY if password in request body is the same as password of the current user', async () => {
+    prisma.user.findUnique
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ hashedPassword: 'hashedPassword' } as PrismaUser);
+    password.verify.mockResolvedValueOnce(true);
+    
+    await updateCurrentUserController(req, res);
+
+    expect(password.verify).toHaveBeenCalledOnce();
+    expect(password.verify).toHaveBeenCalledWith(req.body.user.password, 'hashedPassword');
+
+    expect(res.status).toHaveBeenCalledWith(UNPROCESSABLE_ENTITY.code);
+    expect(res.send).toHaveBeenCalledWith({
+      errors: {
+        password: ['cannot be the same as the current password.'],
+      },
+    });
+  });
+
   it('should return INTERNAL_SERVER_ERROR if getUserByEmail throws an error', async () => {
     prisma.user.findUnique.mockRejectedValueOnce(new Error('get user by name error'));
 
@@ -157,6 +180,21 @@ describe('updateCurrentUserController', () => {
   });
 
   it('should return INTERNAL_SERVER_ERROR if updateUserByEmail throws an error', async () => {
+    password.verify.mockResolvedValueOnce(false);
+    password.hash.mockResolvedValueOnce('dummyHashedPassword');
+
+    prisma.user.findUnique
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValue({
+        id: 1,
+        username: 'test',
+        email: 'test@example.com',
+        hashedPassword: 'dummyHashedPassword',
+        bio: null,
+        image: '',
+        followedUsers: [],
+      });
     prisma.user.update.mockRejectedValueOnce(new Error('update error'));
 
     await updateCurrentUserController(req, res);
@@ -168,18 +206,33 @@ describe('updateCurrentUserController', () => {
     });
   });
 
-  it('should update user details and return updated user if no errors occur', async () => {
+  it('should update user details, return updated user and return new authentication token when email is updated', async () => {
     const dummyNewToken = 'dummyNewToken';
-    const handleUserResponseUtils = await import('../../utils/handleUserResponseUtils');
-    const updatedUser = { username: 'test', email: 'test@test.com' } as PrismaUser;
+    const updatedUser = req.body.user;
 
-    prisma.user.update.mockResolvedValueOnce(updatedUser);
+    delete updatedUser.password;
+
+    prisma.user.update.mockResolvedValueOnce(updatedUser as PrismaUser);
     jwt.sign.mockImplementationOnce(() => dummyNewToken);
     vi.spyOn(handleUserResponseUtils, 'handleUserResponse');
 
     await updateCurrentUserController(req, res);
 
     expect(jwt.sign.mock.calls[0][0]).toStrictEqual({ email: updatedUser.email });
-    expect(handleUserResponse).toHaveBeenCalledWith(updatedUser, dummyNewToken);
+    expect(handleUserResponseUtils.handleUserResponse).toHaveBeenCalledWith(updatedUser, dummyNewToken);
+  });
+
+  it('should update user details, return updated user and return the original authentication token when email is not changed', async () => {
+    const updatedUser = req.body.user;
+    delete updatedUser.email;
+    delete updatedUser.password;
+
+    prisma.user.update.mockResolvedValueOnce(updatedUser as PrismaUser);
+    vi.spyOn(handleUserResponseUtils, 'handleUserResponse');
+
+    await updateCurrentUserController(req, res);
+
+    expect(jwt.sign).toHaveBeenCalledTimes(0);
+    expect(handleUserResponseUtils.handleUserResponse).toHaveBeenCalledWith(updatedUser, req.user?.token);
   });
 });
