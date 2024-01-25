@@ -26,7 +26,6 @@ export function getArticleAuthorFollowStates(
     id: authorId, 
   } = articleAuthorDetails;
   const { 
-    id: currentUserId, 
     email: currentUserEmail 
   } = currentUser;
   const followedUsersOfCurrentUser = new Set(currentUser.followedUsers);
