@@ -1,5 +1,8 @@
 import { type Prisma } from '@prisma/client';
 
+import { getUserByUsername } from './usersDao';
+import prisma from '../prisma/client';
+
 import { 
   type CreateArticleBody, 
   type UpdateArticleBody, 
@@ -7,10 +10,8 @@ import {
   type GetArticlesQueryParams, 
   type GetArticleParams 
 } from '../routes/Articles';
-import { getUserByUsername } from './usersDao';
-import prisma from '../prisma/client';
 
-function parseTitleToSlug(title: string, userId: number) {
+export function parseTitleToSlug(title: string, userId: number) {
   return title
     .toLowerCase()
     .replaceAll(' ', '-')
@@ -18,39 +19,41 @@ function parseTitleToSlug(title: string, userId: number) {
 }
 
 export async function getArticles(queryParams?: GetArticlesQueryParams) {
-  const filters = queryParams ? 
-    await (async () => {
-      const tempFilters: Prisma.ArticleWhereInput = {};
-      
-      if (queryParams.tag) {
-        tempFilters.tagList = {
-          has: queryParams.tag,
-        };
-      }
-      if (queryParams.author) {
-        tempFilters.user = {
-          is: {
-            username: {
-              equals: queryParams.author,
-            }
-          }
-        };
-      }
-      if (queryParams.favorited) {
-        const idOffavoritedUser = (await getUserByUsername(queryParams.favorited))?.id;
-
-        if (!idOffavoritedUser) {
-          throw new Error('The favorited user does not exist.');
+  const filters = 
+    queryParams && 
+    Object.keys(queryParams).length > 0 ? 
+      await (async () => {
+        const tempFilters: Prisma.ArticleWhereInput = {};
+        
+        if (queryParams.tag) {
+          tempFilters.tagList = {
+            has: queryParams.tag,
+          };
         }
+        if (queryParams.author) {
+          tempFilters.user = {
+            is: {
+              username: {
+                equals: queryParams.author,
+              }
+            }
+          };
+        }
+        if (queryParams.favorited) {
+          const idOffavoritedUser = (await getUserByUsername(queryParams.favorited))?.id;
 
-        tempFilters.favoritedUserIdList = {
-          has: idOffavoritedUser,
-        };
-      }
-      
-      return tempFilters;
-    })() : 
-    undefined;
+          if (!idOffavoritedUser) {
+            throw new Error('The favorited user does not exist.');
+          }
+
+          tempFilters.favoritedUserIdList = {
+            has: idOffavoritedUser,
+          };
+        }
+        
+        return tempFilters;
+      })() : 
+      undefined;
 
   return await prisma.article.findMany({
     include: {
@@ -164,10 +167,14 @@ export async function favoriteArticle(params: {
   oldFavoritedUsersList: number[];
   userId: number;
 }) {
+  const favoritedUserIdList = (params.oldFavoritedUsersList.includes(params.userId)) ?
+    params.oldFavoritedUsersList :
+    params.oldFavoritedUsersList.concat(params.userId);
+  
   return await prisma.article.update({
     where: { id: params.articleId },
     data: {
-      favoritedUserIdList: params.oldFavoritedUsersList.concat(params.userId),
+      favoritedUserIdList,
       updatedAt: new Date(),
     },
     include: { user: true },
