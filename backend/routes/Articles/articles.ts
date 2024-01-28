@@ -1,15 +1,11 @@
 import { Router, type RequestHandler } from 'express';
-import type { Comment as PrismaComment, User as PrismaUser } from '@prisma/client';
 
 import { 
   commentArticle,
-  createArticle, 
   deleteArticle, 
   deleteComment, 
   favoriteArticle, 
   getArticle, 
-  getArticles, 
-  getArticlesFeed, 
   unfavoriteArticle, 
   updateArticle 
 } from '../../dao/articlesDao';
@@ -17,13 +13,18 @@ import { getUserByEmail } from '../../dao/usersDao';
 import getJwtUserDetailsMiddleware, { type RequestWithCurrentUserEmail } from '../../middlewares/getJwtUserDetailsMiddleware';
 import jwtPassportMiddleware from '../../middlewares/jwtPassportMiddleware';
 import { checkAuthMiddleware } from '../../middlewares/checkAuthMiddleware';
-import { handleProfileResponse } from '../../utils/handleUserResponseUtils';
+import { 
+  createArticleController, 
+  getArticlesController, 
+  getArticlesFeedController, 
+  getSingleArticleController 
+} from '../../controllers/articles/articlesController';
+import * as articlesUtils from '../../controllers/articles/utils';
 
 import statusCodes from '../../constants/status-codes';
 
 import type {
   GetArticlesFeedQueryParams,
-  ArticleObj,
   GetArticlesQueryParams,
   MultipleArticlesResponse,
   SingleArticleResponse,
@@ -36,8 +37,9 @@ import type {
   SingleCommentResponse,
   AddCommentBody
 } from './types';
-import { ResponseObj } from '../../globals';
-import { createArticleController, getArticlesController, getArticlesFeedController, getSingleArticleController } from '../../controllers/articles/articlesController';
+import type { ResponseObj } from '../../globals';
+
+const { parseRawArticles, parseRawComments } = articlesUtils;
 
 const { 
   INTERNAL_SERVER_ERROR, 
@@ -52,72 +54,6 @@ const articlesRouter = Router();
 
 interface CommentIdPathParam {
   commentId: string;
-}
-
-function getArticleAuthorFollowStates(
-  articleAuthorDetails: Pick<PrismaUser, 'email' | 'id' | 'followedUsers'>,
-  currentUser?: Pick<PrismaUser, 'id' | 'email' | 'followedUsers'> | null,
-  ) {
-  if (!currentUser) {
-    return {
-      isFollowingArticleAuthor: false,
-      favorited: false,
-    };
-  }
-
-  const { email: authorEmail, id: authorId, followedUsers: favoritedUserIdList } = articleAuthorDetails;
-  const { id: currentUserId, email: currentUserEmail } = currentUser;
-  const followedUsersOfCurrentUser = new Set(currentUser.followedUsers);
-
-  const isFollowingArticleAuthor = 
-    currentUserEmail !== authorEmail &&
-    followedUsersOfCurrentUser.has(authorId);
-  const favorited = favoritedUserIdList.includes(currentUserId);
-
-  return { isFollowingArticleAuthor, favorited };
-}
-
-function parseRawComments(
-  rawCommentsOrRawComment: PrismaComment | PrismaComment[],
-  articleAuthor: PrismaUser,
-  currentUser?: Pick<PrismaUser, 'id' | 'email' | 'followedUsers'> | null,
-) {
-  const commentsToBeChecked = (rawCommentsOrRawComment instanceof Array) ?
-    rawCommentsOrRawComment :
-    [rawCommentsOrRawComment];
-  
-  return commentsToBeChecked.map(rawComment => {
-    const { articleId, userId, ...otherProps } = rawComment;
-    const { isFollowingArticleAuthor } = getArticleAuthorFollowStates(articleAuthor, currentUser);
-
-    return {
-      ...otherProps,
-      author: handleProfileResponse(articleAuthor, isFollowingArticleAuthor).profile,
-    };
-  });
-}
-
-function parseRawArticles(
-  rawArticles: ReturnType<typeof getArticles> extends Promise<infer U> ? U : never,
-  currentUser?: Pick<PrismaUser, 'id' | 'email' | 'followedUsers'> | null,
-) {
-  return rawArticles.map<ArticleObj>(article => {
-    const {
-      userId,
-      user: articleAuthor,
-      favoritedUserIdList,
-      ...otherAttributes
-    } = article;
-
-    const { isFollowingArticleAuthor, favorited } = getArticleAuthorFollowStates(articleAuthor, currentUser);
-    
-    return {
-      ...otherAttributes,
-      favoritesCount: favoritedUserIdList.length,
-      favorited,
-      author: handleProfileResponse(articleAuthor, isFollowingArticleAuthor).profile,
-    };
-  });
 }
 
 const checkSlugPresenceMiddleware: RequestHandler<RawArticlePathParams, any, any, any> = (req, res, next) => {

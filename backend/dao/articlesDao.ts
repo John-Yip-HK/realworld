@@ -1,4 +1,4 @@
-import { PrismaClient, type Prisma } from '@prisma/client';
+import { type Prisma } from '@prisma/client';
 
 import { 
   type CreateArticleBody, 
@@ -8,8 +8,7 @@ import {
   type GetArticleParams 
 } from '../routes/Articles';
 import { getUserByUsername } from './usersDao';
-
-const prisma = new PrismaClient();
+import prisma from '../prisma/client';
 
 function parseTitleToSlug(title: string, userId: number) {
   return title

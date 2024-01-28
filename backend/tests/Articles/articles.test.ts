@@ -1,20 +1,14 @@
-import type { Mock } from 'vitest';
-import type { Request, Response } from 'express';
+import type { Response } from 'express';
 import type { User as PrismaUser } from '@prisma/client';
 
 import { 
   getArticlesController, 
-  getArticlesFeedController 
 } from '../../controllers/articles';
 import { 
   type RawArticles, 
-  getCurrentUser, 
   parseRawArticles 
 } from '../../controllers/articles/utils';
-import { 
-  getArticles, 
-  getArticlesFeed 
-} from '../../dao/articlesDao';
+import prisma from '../../prisma/__mocks__/client';
 
 import statusCodes from '../../constants/status-codes';
 
@@ -22,26 +16,16 @@ import type { RequestWithCurrentUserEmail } from '../../middlewares/getJwtUserDe
 import type { 
   MultipleArticlesResponse, 
   GetArticlesQueryParams, 
-  GetArticlesFeedQueryParams 
 } from '../../routes/Articles';
 
 const { NOT_FOUND, BAD_REQUEST, INTERNAL_SERVER_ERROR } = statusCodes;
-
-vi.mock('../../controllers/articles/utils', async (importOriginal) => {
-  const originalImports = await importOriginal<object>();
-
-  return {
-    ...originalImports,
-    getCurrentUser: vi.fn(),
-  };
-});
-vi.mock('../../controllers/articlesController');
-vi.mock('../../dao/articlesDao');
 
 describe('getArticlesController', () => {
   let req: RequestWithCurrentUserEmail<void, MultipleArticlesResponse, void, GetArticlesQueryParams>;
   let res: Response<MultipleArticlesResponse>;
   let currentUser: PrismaUser;
+  let anotherUser: PrismaUser;
+  let rawArticles: RawArticles;
   
   beforeEach(() => {
     req = {
@@ -59,10 +43,17 @@ describe('getArticlesController', () => {
       email: 'test@test.com', 
       followedUsers: [],
     } as unknown as PrismaUser;
+
+    anotherUser = {
+      id: 2,
+      email: 'test2@test.com', 
+      followedUsers: [],
+    } as unknown as PrismaUser;
   });
 
   it('should return the articles and the count of articles', async () => {
-    const rawArticles: RawArticles = [
+    delete (req as any).query;
+    rawArticles = [
       { 
         id: 1,
         slug: 'test',
@@ -79,8 +70,8 @@ describe('getArticlesController', () => {
     ];
     const articles = parseRawArticles(rawArticles, currentUser);
     
-    (getCurrentUser as Mock).mockResolvedValueOnce(currentUser);
-    (getArticles as Mock).mockResolvedValueOnce(rawArticles);
+    prisma.user.findUnique.mockResolvedValueOnce(currentUser);
+    prisma.article.findMany.mockResolvedValueOnce(rawArticles);
 
     await getArticlesController(req, res);
 
@@ -92,16 +83,8 @@ describe('getArticlesController', () => {
   });
 
   it('should return the articles and the count of articles with the first article having a following author', async () => {
-    const copiedCurrentUser = structuredClone(currentUser);
-    const anotherUser = {
-      id: 2,
-      email: 'test2@test.com', 
-      followedUsers: [],
-    } as unknown as PrismaUser;
-
-    copiedCurrentUser.followedUsers = [anotherUser.id];
-
-    const rawArticles: RawArticles = [
+    currentUser.followedUsers = [anotherUser.id];
+    rawArticles = [
       { 
         id: 1,
         slug: 'test-2',
@@ -125,14 +108,14 @@ describe('getArticlesController', () => {
         createdAt: new Date(), 
         updatedAt: new Date(), 
         favoritedUserIdList: [],
-        userId: copiedCurrentUser.id,
-        user: copiedCurrentUser,
+        userId: currentUser.id,
+        user: currentUser,
       }
     ];
-    const articles = parseRawArticles(rawArticles, copiedCurrentUser);
+    const articles = parseRawArticles(rawArticles, currentUser);
     
-    (getCurrentUser as Mock).mockResolvedValueOnce(copiedCurrentUser);
-    (getArticles as Mock).mockResolvedValueOnce(rawArticles);
+    prisma.user.findUnique.mockResolvedValueOnce(currentUser);
+    prisma.article.findMany.mockResolvedValueOnce(rawArticles);
 
     await getArticlesController(req, res);
 
@@ -145,14 +128,7 @@ describe('getArticlesController', () => {
   });
 
   it('should return the articles and the count of articles with favorited first article', async () => {
-    const copiedCurrentUser = structuredClone(currentUser);
-    const anotherUser = {
-      id: 2,
-      email: 'test2@test.com', 
-      followedUsers: [],
-    } as unknown as PrismaUser;
-
-    const rawArticles: RawArticles = [
+    rawArticles = [
       { 
         id: 1,
         slug: 'test-2',
@@ -162,7 +138,7 @@ describe('getArticlesController', () => {
         tagList: [], 
         createdAt: new Date(), 
         updatedAt: new Date(), 
-        favoritedUserIdList: [copiedCurrentUser.id],
+        favoritedUserIdList: [currentUser.id],
         userId: anotherUser.id,
         user: anotherUser,
       },
@@ -176,14 +152,14 @@ describe('getArticlesController', () => {
         createdAt: new Date(), 
         updatedAt: new Date(), 
         favoritedUserIdList: [anotherUser.id],
-        userId: copiedCurrentUser.id,
-        user: copiedCurrentUser,
+        userId: currentUser.id,
+        user: currentUser,
       }
     ];
-    const articles = parseRawArticles(rawArticles, copiedCurrentUser);
+    const articles = parseRawArticles(rawArticles, currentUser);
     
-    (getCurrentUser as Mock).mockResolvedValueOnce(copiedCurrentUser);
-    (getArticles as Mock).mockResolvedValueOnce(rawArticles);
+    prisma.user.findUnique.mockResolvedValueOnce(currentUser);
+    prisma.article.findMany.mockResolvedValueOnce(rawArticles);
 
     await getArticlesController(req, res);
 
@@ -196,19 +172,17 @@ describe('getArticlesController', () => {
     expect(articles[0].favoritesCount).toBe(1);
   });
 
-  it('should return NOT_FOUND if the favorited user does not exist', async () => {
-    const copiedReq = structuredClone(req);
+  it('should throw NOT_FOUND if the favorited user does not exist', async () => {
     const error = new Error('The favorited user does not exist.');
+    req.query = { favorited: 'other-user' };
 
-    copiedReq.query = { favorited: 'other-user' };
+    prisma.user.findUnique
+      .mockResolvedValueOnce(currentUser)
+      .mockResolvedValueOnce(null);
 
-    (getCurrentUser as Mock).mockResolvedValueOnce(currentUser);
-    (getArticles as Mock).mockRejectedValueOnce(error);
+    await getArticlesController(req, res);
 
-    await getArticlesController(copiedReq, res);
-
-    expect(getArticles).toHaveBeenCalledOnce();
-    expect(getArticles).toHaveBeenCalledWith(copiedReq.query);
+    expect(prisma.user.findUnique.mock.calls[1][0].where).toEqual({ username: req.query.favorited });
 
     expect(res.status).toHaveBeenCalledWith(NOT_FOUND.code);
     expect(res.send).toHaveBeenCalledWith({
@@ -217,10 +191,10 @@ describe('getArticlesController', () => {
     });
   });
 
-  it('should return BAD_REQUEST for other errors with Error type', async () => {
+  it('should throw BAD_REQUEST for other errors with Error type', async () => {
     const error = new Error('Some other error.');
 
-    (getCurrentUser as Mock).mockRejectedValueOnce(error);
+    prisma.user.findUnique.mockRejectedValueOnce(error);
 
     await getArticlesController(req, res);
 
@@ -231,10 +205,10 @@ describe('getArticlesController', () => {
     });
   });
 
-  it('should return INTERNAL_SERVER_ERROR for other errors', async () => {
+  it('should throw INTERNAL_SERVER_ERROR for other errors', async () => {
     const error = 'Non-Error error';
 
-    (getCurrentUser as Mock).mockRejectedValueOnce(error);
+    prisma.user.findUnique.mockRejectedValueOnce(error);
 
     await getArticlesController(req, res);
 
@@ -245,28 +219,3 @@ describe('getArticlesController', () => {
     });
   });
 });
-
-// describe('getArticlesFeedController', () => {
-//   const reqFeed = {
-//     user: {
-//       email: 'test@test.com',
-//     },
-//     query: {},
-//   } as unknown as Request<void, MultipleArticlesResponse, void, GetArticlesFeedQueryParams>;
-
-//   it('should return the articles feed and the count of followed users', async () => {
-//     const currentUser = { email: 'test@test.com', username: 'test', followedUsers: ['1'] };
-//     const rawArticles = [{ id: '1', title: 'test', description: 'test', body: 'test', tagList: [], createdAt: new Date(), updatedAt: new Date(), favorited: false, favoritesCount: 0, author: currentUser }];
-//     const articles = parseRawArticles(rawArticles, currentUser);
-//     (getCurrentUser as Mock).mockResolvedValueOnce(currentUser);
-//     (getArticlesFeed as Mock).mockResolvedValueOnce(rawArticles);
-//     (parseRawArticles as Mock).mockReturnValueOnce(articles);
-//     await getArticlesFeedController(reqFeed, res);
-//     expect(res.send).toHaveBeenCalledWith({
-//       articles,
-//       articlesCount: currentUser.followedUsers.length,
-//     });
-//   });
-
-//   // Add more tests for getArticlesFeedController here...
-// });
