@@ -71,7 +71,7 @@ export async function getArticlesFeedController(
     
     return res.send({
       articles,
-      articlesCount: followedUsers.length,
+      articlesCount: articles.length,
     });
   } catch (error) {
     if (error instanceof Error) {
