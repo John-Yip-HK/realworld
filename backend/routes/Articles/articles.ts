@@ -15,9 +15,11 @@ import jwtPassportMiddleware from '../../middlewares/jwtPassportMiddleware';
 import { checkAuthMiddleware } from '../../middlewares/checkAuthMiddleware';
 import { 
   createArticleController, 
+  deleteArticleController, 
   getArticlesController, 
   getArticlesFeedController, 
-  getSingleArticleController 
+  getSingleArticleController, 
+  updateArticleController
 } from '../../controllers/articles/articlesController';
 import * as articlesUtils from '../../controllers/articles/utils';
 
@@ -126,47 +128,7 @@ articlesRouter.put<ArticlePathParams, SingleArticleResponse, UpdateArticleBody, 
   jwtPassportMiddleware,
   checkAuthMiddleware,
   checkSlugPresenceMiddleware,
-  async (req, res) => {
-    const { slug } = req.params;
-    
-    try {
-      const currentUser = await getCurrentUser(req.user!.email);
-      const { id: userId } = currentUser!;
-      const articleWithTheSameTitle = await getArticle({ slug });
-
-      if (!articleWithTheSameTitle) {
-        return res.status(NOT_FOUND.code).send({
-          error: NOT_FOUND.message,
-          details: 'This article does not exist.',
-        });
-      }
-      
-      if (articleWithTheSameTitle.userId !== userId) {
-        return res.status(FORBIDDEN.code).send({
-          error: FORBIDDEN.message,
-          details: 'This article does not belong to the current user.',
-        });
-      }
-      
-      const updateArticleParams = {
-        ...req.body.article,
-        userId,
-        articleId: articleWithTheSameTitle.id,
-        oldTitle: articleWithTheSameTitle.title,
-      };
-      const updatedRawArticle = await updateArticle(updateArticleParams);
-      const updatedArticle = parseRawArticles([updatedRawArticle], currentUser)[0];
-
-      return res.send({
-        article: updatedArticle,
-      });
-    } catch (error) {
-      return res.status(INTERNAL_SERVER_ERROR.code).send({
-        error: INTERNAL_SERVER_ERROR.message,
-        details: JSON.stringify(error),
-      });
-    }
-  }
+  updateArticleController
 );
 
 articlesRouter.delete<ArticlePathParams, DeleteArticleResponse, void, void>(
@@ -174,42 +136,7 @@ articlesRouter.delete<ArticlePathParams, DeleteArticleResponse, void, void>(
   jwtPassportMiddleware,
   checkAuthMiddleware,
   checkSlugPresenceMiddleware,
-  async (req, res) => {
-    const { slug } = req.params;
-    
-    try {
-      const currentUser = await getCurrentUser(req.user!.email);
-      const { id: userId } = currentUser!;
-      const articleWithTheSameTitle = await getArticle({ slug });
-
-      if (!articleWithTheSameTitle) {
-        return res.status(NOT_FOUND.code).send({
-          error: NOT_FOUND.message,
-          details: 'This article does not exist.',
-        });
-      }
-      
-      if (articleWithTheSameTitle.userId !== userId) {
-        return res.status(FORBIDDEN.code).send({
-          error: FORBIDDEN.message,
-          details: 'This article does not belong to the current user.',
-        });
-      }
-      
-      const deleteArticleParams = {
-        articleId: articleWithTheSameTitle.id,
-        slug,
-      };
-      await deleteArticle(deleteArticleParams);
-
-      return res.sendStatus(NO_CONTENT.code);
-    } catch (error) {
-      return res.status(INTERNAL_SERVER_ERROR.code).send({
-        error: INTERNAL_SERVER_ERROR.message,
-        details: JSON.stringify(error),
-      });
-    }
-  }
+  deleteArticleController
 );
 
 articlesRouter.get<ArticlePathParams, MultipleCommentsResponse, void, void>(

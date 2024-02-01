@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 
-import { createArticle, getArticle, getArticles, getArticlesFeed } from '../../dao/articlesDao';
+import { createArticle, deleteArticle, getArticle, getArticles, getArticlesFeed, updateArticle } from '../../dao/articlesDao';
 import { getCurrentUser, parseRawArticles } from './utils';
 
 import statusCodes from '../../constants/status-codes';
@@ -12,10 +12,18 @@ import type {
   SingleArticleResponse, 
   CreateArticleBody, 
   GetArticlesFeedQueryParams, 
-  ArticlePathParams
+  ArticlePathParams,
+  UpdateArticleBody,
+  DeleteArticleResponse
 } from '../../routes/Articles';
 
-const { NOT_FOUND, BAD_REQUEST, INTERNAL_SERVER_ERROR } = statusCodes;
+const {
+  NOT_FOUND,
+  BAD_REQUEST,
+  INTERNAL_SERVER_ERROR,
+  FORBIDDEN,
+  NO_CONTENT
+} = statusCodes;
 
 export async function getArticlesController(
   req: RequestWithCurrentUserEmail<void, MultipleArticlesResponse, void, GetArticlesQueryParams>, 
@@ -145,6 +153,91 @@ export async function getSingleArticleController(
     return res.send({
       article,
     });
+  } catch (error) {
+    return res.status(INTERNAL_SERVER_ERROR.code).send({
+      error: INTERNAL_SERVER_ERROR.message,
+      details: JSON.stringify(error),
+    });
+  }
+}
+
+export async function updateArticleController(
+  req: Request<ArticlePathParams, SingleArticleResponse, UpdateArticleBody, void>,
+  res: Response<SingleArticleResponse>
+) {
+  const { slug } = req.params;
+  
+  try {
+    const currentUser = await getCurrentUser(req.user!.email);
+    const { id: userId } = currentUser!;
+    const articleWithTheSameTitle = await getArticle({ slug });
+
+    if (!articleWithTheSameTitle) {
+      return res.status(NOT_FOUND.code).send({
+        error: NOT_FOUND.message,
+        details: 'This article does not exist.',
+      });
+    }
+    
+    if (articleWithTheSameTitle.userId !== userId) {
+      return res.status(FORBIDDEN.code).send({
+        error: FORBIDDEN.message,
+        details: 'This article does not belong to the current user.',
+      });
+    }
+    
+    const updateArticleParams = {
+      ...req.body.article,
+      userId,
+      articleId: articleWithTheSameTitle.id,
+      oldTitle: articleWithTheSameTitle.title,
+    };
+    const updatedRawArticle = await updateArticle(updateArticleParams);
+    const updatedArticle = parseRawArticles([updatedRawArticle], currentUser)[0];
+
+    return res.send({
+      article: updatedArticle,
+    });
+  } catch (error) {
+    return res.status(INTERNAL_SERVER_ERROR.code).send({
+      error: INTERNAL_SERVER_ERROR.message,
+      details: JSON.stringify(error),
+    });
+  }
+}
+
+export async function deleteArticleController(
+  req: Request<ArticlePathParams, DeleteArticleResponse, void, void>,
+  res: Response<DeleteArticleResponse>
+) {
+  const { slug } = req.params;
+  
+  try {
+    const currentUser = await getCurrentUser(req.user!.email);
+    const { id: userId } = currentUser!;
+    const articleWithTheSameTitle = await getArticle({ slug });
+
+    if (!articleWithTheSameTitle) {
+      return res.status(NOT_FOUND.code).send({
+        error: NOT_FOUND.message,
+        details: 'This article does not exist.',
+      });
+    }
+    
+    if (articleWithTheSameTitle.userId !== userId) {
+      return res.status(FORBIDDEN.code).send({
+        error: FORBIDDEN.message,
+        details: 'This article does not belong to the current user.',
+      });
+    }
+    
+    const deleteArticleParams = {
+      articleId: articleWithTheSameTitle.id,
+      slug,
+    };
+    await deleteArticle(deleteArticleParams);
+
+    return res.sendStatus(NO_CONTENT.code);
   } catch (error) {
     return res.status(INTERNAL_SERVER_ERROR.code).send({
       error: INTERNAL_SERVER_ERROR.message,
