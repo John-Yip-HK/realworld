@@ -3,9 +3,11 @@ import type { User as PrismaUser } from '@prisma/client';
 
 import { 
   createArticleController,
+  deleteArticleController,
   getArticlesController,
   getArticlesFeedController,
-  getSingleArticleController, 
+  getSingleArticleController,
+  updateArticleController, 
 } from '../../controllers/articles';
 import * as articleUtils from '../../controllers/articles/utils';
 import prisma from '../../prisma/__mocks__/client';
@@ -21,10 +23,12 @@ import type {
   SingleArticleResponse,
   ArticleObj,
   ArticlePathParams,
+  UpdateArticleBody,
+  DeleteArticleResponse,
 } from '../../routes/Articles';
 import { parseTitleToSlug } from '../../dao/articlesDao';
 
-const { NOT_FOUND, BAD_REQUEST, INTERNAL_SERVER_ERROR } = statusCodes;
+const { NOT_FOUND, BAD_REQUEST, INTERNAL_SERVER_ERROR, FORBIDDEN, NO_CONTENT } = statusCodes;
 
 const { parseRawArticles } = articleUtils;
 type RawArticles = articleUtils.RawArticles;
@@ -502,6 +506,219 @@ describe('getSingleArticleController', () => {
     prisma.user.findUnique.mockRejectedValueOnce(new Error('Test error'));
 
     await getSingleArticleController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(INTERNAL_SERVER_ERROR.code);
+    expect(res.send).toHaveBeenCalledWith({
+      error: INTERNAL_SERVER_ERROR.message,
+      details: JSON.stringify(new Error('Test error')),
+    });
+  });
+});
+
+describe('updateArticleController', () => {
+  let req: Request<ArticlePathParams, SingleArticleResponse, UpdateArticleBody, void>;
+  let res: Response<SingleArticleResponse>;
+  let currentUser: PrismaUser;
+  let rawArticle: RawArticle;
+
+  beforeEach(() => {
+    req = {
+      user: { email: 'test@test.com' },
+      params: { slug: 'test-article' },
+      body: {
+        article: {
+          title: 'Updated Article',
+          description: 'Updated Description',
+          body: 'Updated Body',
+          tagList: ['Updated']
+        }
+      },
+    } as unknown as Request<ArticlePathParams, SingleArticleResponse, UpdateArticleBody, void>;
+
+    res = {
+      status: vi.fn().mockReturnThis(),
+      send: vi.fn(),
+    } as unknown as Response<SingleArticleResponse>;
+
+    currentUser = {
+      email: 'test@test.com',
+      id: 1,
+    } as PrismaUser;
+
+    rawArticle = {
+      title: 'Test Article',
+      slug: parseTitleToSlug('Test Article', currentUser.id),
+      description: 'Test Description',
+      body: 'Test Body',
+      tagList: ['Test'],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      favoritedUserIdList: [],
+      userId: currentUser.id,
+      user: currentUser,
+      id: 1,
+    };
+
+    vi.spyOn(articleUtils, 'parseRawArticles').mockReturnValueOnce([
+      rawArticle as unknown as ArticleObj
+    ]);
+    prisma.user.findUnique.mockResolvedValueOnce(currentUser);
+  });
+
+  test('should update an article', async () => {
+    const updateDetails = req.body.article;
+    const updatedArticleSlug = parseTitleToSlug(updateDetails.title!, currentUser.id);
+    
+    prisma.article.findFirst.mockResolvedValueOnce(rawArticle);
+    prisma.article.update.mockResolvedValueOnce({
+      ...rawArticle,
+      ...updateDetails,
+      slug: updatedArticleSlug,
+    });
+    
+    await updateArticleController(req, res);
+
+    expect(prisma.user.findUnique.mock.calls[0][0].where).toStrictEqual({ email: req.user!.email });
+    expect(prisma.article.findFirst.mock.calls[0][0]?.where).toStrictEqual({ slug: { equals: req.params.slug } });
+    expect(prisma.article.update).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        ...updateDetails,
+        slug: updatedArticleSlug,
+      }),
+      where: {
+        id: rawArticle.id,
+      },
+      include: {
+        user: true,
+      },
+    });
+    expect(prisma.article.update.mock.calls[0][0].data).toHaveProperty('updatedAt');
+    expect(res.send).toHaveBeenCalledWith({ article: rawArticle });
+  });
+
+  test('should return NOT_FOUND when article does not exist', async () => {
+    prisma.article.findFirst.mockResolvedValueOnce(null);
+
+    await updateArticleController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(NOT_FOUND.code);
+    expect(res.send).toHaveBeenCalledWith({
+      error: NOT_FOUND.message,
+      details: 'This article does not exist.',
+    });
+  });
+
+  test('should return FORBIDDEN when article does not belong to the current user', async () => {
+    prisma.article.findFirst.mockResolvedValueOnce({
+      ...rawArticle,
+      userId: 2,
+    });
+
+    await updateArticleController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(FORBIDDEN.code);
+    expect(res.send).toHaveBeenCalledWith({
+      error: FORBIDDEN.message,
+      details: 'This article does not belong to the current user.',
+    });
+  });
+
+  test('should handle INTERNAL_SERVER_ERROR', async () => {
+    prisma.article.findFirst.mockRejectedValueOnce(new Error('Test error'));
+
+    await updateArticleController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(INTERNAL_SERVER_ERROR.code);
+    expect(res.send).toHaveBeenCalledWith({
+      error: INTERNAL_SERVER_ERROR.message,
+      details: JSON.stringify(new Error('Test error')),
+    });
+  });
+});
+
+describe('deleteArticleController', () => {
+  let req: Request<ArticlePathParams, DeleteArticleResponse, void, void>;
+  let res: Response<DeleteArticleResponse>;
+  let currentUser: PrismaUser;
+  let articleToBeDeleted: RawArticle;
+
+  beforeEach(() => {
+    currentUser = {
+      email: 'test@test.com',
+      id: 1,
+    } as PrismaUser;
+    
+    req = {
+      user: { email: currentUser.email },
+      params: { slug: 'test-article' },
+    } as unknown as Request<ArticlePathParams, DeleteArticleResponse, void, void>;
+
+    res = {
+      status: vi.fn().mockReturnThis(),
+      send: vi.fn(),
+      sendStatus: vi.fn(),
+    } as unknown as Response<DeleteArticleResponse>;
+
+    articleToBeDeleted = {
+      slug: req.params.slug,
+      id: 1,
+      userId: currentUser.id,
+    } as RawArticle;
+
+    prisma.user.findUnique.mockResolvedValueOnce(currentUser);
+  });
+
+  test('should delete an article', async () => {
+    prisma.article.findFirst.mockResolvedValueOnce(articleToBeDeleted);
+    prisma.article.delete.mockResolvedValueOnce(undefined as any);
+
+    const { userId, ...articleTBDParams } = articleToBeDeleted;
+    
+    await deleteArticleController(req, res);
+
+    expect(prisma.user.findUnique).toHaveBeenCalledWith({ where: { email: req.user!.email } });
+    expect(prisma.article.findFirst).toHaveBeenCalledWith({
+      include: {
+        user: true,
+        comments: undefined,
+      },
+      where: { slug: { equals: req.params.slug } }, 
+    });
+    expect(prisma.article.delete).toHaveBeenCalledWith({ where: articleTBDParams });
+    expect(res.sendStatus).toHaveBeenCalledWith(NO_CONTENT.code);
+  });
+
+  test('should return NOT_FOUND when article does not exist', async () => {
+    prisma.article.findFirst.mockResolvedValueOnce(null);
+
+    await deleteArticleController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(NOT_FOUND.code);
+    expect(res.send).toHaveBeenCalledWith({
+      error: NOT_FOUND.message,
+      details: 'This article does not exist.',
+    });
+  });
+
+  test('should return FORBIDDEN when article does not belong to the current user', async () => {
+    prisma.article.findFirst.mockResolvedValueOnce({ 
+      ...articleToBeDeleted,
+      userId: 2,
+    });
+
+    await deleteArticleController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(FORBIDDEN.code);
+    expect(res.send).toHaveBeenCalledWith({
+      error: FORBIDDEN.message,
+      details: 'This article does not belong to the current user.',
+    });
+  });
+
+  test('should handle error', async () => {
+    prisma.article.findFirst.mockRejectedValueOnce(new Error('Test error'));
+
+    await deleteArticleController(req, res);
 
     expect(res.status).toHaveBeenCalledWith(INTERNAL_SERVER_ERROR.code);
     expect(res.send).toHaveBeenCalledWith({
