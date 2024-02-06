@@ -1,9 +1,12 @@
 import type { Request, Response } from 'express';
-import type { User as PrismaUser } from '@prisma/client';
+import type { User as PrismaUser, Article as PrismaArticle } from '@prisma/client';
 
 import { 
+  createArticleCommentController,
   createArticleController,
+  deleteArticleCommentController,
   deleteArticleController,
+  getArticleCommentsController,
   getArticlesController,
   getArticlesFeedController,
   getSingleArticleController,
@@ -25,12 +28,17 @@ import type {
   ArticlePathParams,
   UpdateArticleBody,
   DeleteArticleResponse,
+  MultipleCommentsResponse,
+  AddCommentBody,
+  SingleCommentResponse,
+  CommentIdPathParam,
 } from '../../routes/Articles';
 import { parseTitleToSlug } from '../../dao/articlesDao';
+import { ResponseObj } from '../../globals';
 
 const { NOT_FOUND, BAD_REQUEST, INTERNAL_SERVER_ERROR, FORBIDDEN, NO_CONTENT } = statusCodes;
 
-const { parseRawArticles } = articleUtils;
+const { parseRawArticles, parseRawComments } = articleUtils;
 type RawArticles = articleUtils.RawArticles;
 type RawArticle = RawArticles[number];
 
@@ -719,6 +727,401 @@ describe('deleteArticleController', () => {
     prisma.article.findFirst.mockRejectedValueOnce(new Error('Test error'));
 
     await deleteArticleController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(INTERNAL_SERVER_ERROR.code);
+    expect(res.send).toHaveBeenCalledWith({
+      error: INTERNAL_SERVER_ERROR.message,
+      details: JSON.stringify(new Error('Test error')),
+    });
+  });
+});
+
+describe('getArticleCommentsController', () => {
+  let req: RequestWithCurrentUserEmail<ArticlePathParams, MultipleCommentsResponse, void, void>;
+  let res: Response<MultipleCommentsResponse>;
+  let currentUser: PrismaUser;
+  let parsedComments: ReturnType<typeof parseRawComments>;
+
+  beforeEach(() => {
+    req = {
+      currentUserEmail: 'test@test.com',
+      params: { slug: 'test-article' },
+    } as unknown as RequestWithCurrentUserEmail<ArticlePathParams, MultipleCommentsResponse, void, void>;
+
+    res = {
+      status: vi.fn().mockReturnThis(),
+      send: vi.fn(),
+    } as unknown as Response<MultipleCommentsResponse>;
+
+    currentUser = {
+      id: 1,
+      username: 'test',
+      email: 'test@test.com',
+      hashedPassword: 'hashedPassword',
+      bio: null,
+      image: '',
+      followedUsers: [],
+    };
+    prisma.user.findUnique.mockResolvedValueOnce(currentUser);
+
+    parsedComments = [
+      {
+        author: {
+          following: false,
+          username: 'test',
+          bio: null,
+          image: '',
+        },
+        id: 1,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        body: 'Test Comment',
+      },
+      {
+        author: {
+          following: false,
+          username: 'test',
+          bio: null,
+          image: '',
+        },
+        id: 2,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        body: 'Another Comment',
+      },
+      {
+        author: {
+          following: false,
+          username: 'test',
+          bio: null,
+          image: '',
+        },
+        id: 3,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        body: 'Yet Another Comment',
+      },
+    ];
+    vi.spyOn(articleUtils, 'parseRawComments').mockReturnValueOnce(parsedComments);
+  });
+
+  test('should get comments of an article', async () => {
+    prisma.article.findFirst.mockResolvedValueOnce({
+      id: 1,
+      slug: 'test-article',
+      title: 'Test Article',
+      description: 'This is a test article',
+      body: 'Lorem ipsum dolor sit amet',
+      tagList: ['test', 'article'],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      userId: 1,
+      favoritedUserIdList: [1, 2, 3],
+    });
+    
+    await getArticleCommentsController(req, res);
+
+    expect(prisma.user.findUnique).toHaveBeenCalledWith({
+      where: {
+        email: req.currentUserEmail,
+      },
+    });
+    expect(prisma.article.findFirst).toHaveBeenCalledWith({
+      where: {
+        slug: {
+          equals: req.params.slug,
+        },
+      },
+      include: {
+        comments: true,
+        user: true,
+      },
+    });
+    expect(res.send).toHaveBeenCalledWith({
+      comments: parsedComments,
+    });
+  });
+
+  test('should return NOT_FOUND when article does not exist', async () => {
+    prisma.article.findFirst.mockResolvedValueOnce(null);
+
+    await getArticleCommentsController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(NOT_FOUND.code);
+    expect(res.send).toHaveBeenCalledWith({
+      error: NOT_FOUND.message,
+      details: 'Such article does not exist.',
+    });
+  });
+
+  test('should handle INTERNAL_SERVER_ERROR', async () => {
+    prisma.article.findFirst.mockRejectedValueOnce(new Error('Test error'));
+
+    await getArticleCommentsController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(INTERNAL_SERVER_ERROR.code);
+    expect(res.send).toHaveBeenCalledWith({
+      error: INTERNAL_SERVER_ERROR.message,
+      details: JSON.stringify(new Error('Test error')),
+    });
+  });
+});
+
+describe('createArticleCommentController', () => {
+  let req: Request<ArticlePathParams, SingleCommentResponse, AddCommentBody, void>;
+  let res: Response<SingleCommentResponse>;
+  let currentUser: PrismaUser;
+  let parsedComments: ReturnType<typeof parseRawComments>;
+  let retrievedArticle: PrismaArticle;
+
+  beforeEach(() => {
+    req = {
+      user: { email: 'test@test.com' },
+      params: { slug: 'test-article' },
+      body: { comment: { body: 'Test Comment' } },
+    } as unknown as Request<ArticlePathParams, SingleCommentResponse, AddCommentBody, void>;
+
+    res = {
+      status: vi.fn().mockReturnThis(),
+      send: vi.fn(),
+    } as unknown as Response<SingleCommentResponse>;
+
+    currentUser = {
+      id: 1,
+      username: 'test',
+      email: 'test@test.com',
+      hashedPassword: 'hashedPassword',
+      bio: null,
+      image: '',
+      followedUsers: [],
+    };
+    prisma.user.findUnique.mockResolvedValueOnce(currentUser);
+
+    parsedComments = [
+      {
+        author: {
+          following: false,
+          username: 'test',
+          bio: null,
+          image: '',
+        },
+        id: 1,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        body: 'Test Comment',
+      },
+    ];
+    vi.spyOn(articleUtils, 'parseRawComments').mockReturnValueOnce(parsedComments);
+
+    retrievedArticle = {
+      id: 1,
+      slug: req.params.slug,
+      title: 'Test Article',
+      description: 'This is a test article',
+      body: 'Lorem ipsum dolor sit amet',
+      tagList: ['test', 'article'],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      userId: 1,
+      favoritedUserIdList: [1, 2, 3],
+    };
+  });
+
+  test('should create a comment for an article', async () => {
+    prisma.article.findFirst.mockResolvedValueOnce(retrievedArticle);
+    
+    await createArticleCommentController(req, res);
+
+    expect(prisma.user.findUnique).toHaveBeenCalledWith({
+      where: {
+        email: req.user!.email,
+      },
+    });
+    expect(prisma.article.findFirst).toHaveBeenCalledWith({
+      where: {
+        slug: {
+          equals: req.params.slug,
+        },
+      },
+      include: {
+        user: true,
+        comments: undefined,
+      }
+    });
+    expect(prisma.comment.create).toHaveBeenCalledWith({
+      data: {
+        body: req.body.comment.body,
+        userId: currentUser.id,
+        articleId: retrievedArticle.id,
+      },
+    });
+    expect(res.send).toHaveBeenCalledWith({
+      comment: parsedComments[0],
+    });
+  });
+
+  test('should return NOT_FOUND when article does not exist', async () => {
+    prisma.article.findFirst.mockResolvedValueOnce(null);
+
+    await createArticleCommentController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(NOT_FOUND.code);
+    expect(res.send).toHaveBeenCalledWith({
+      error: NOT_FOUND.message,
+      details: 'Such article does not exist.',
+    });
+  });
+
+  test('should handle INTERNAL_SERVER_ERROR', async () => {
+    prisma.article.findFirst.mockRejectedValueOnce(new Error('Test error'));
+
+    await createArticleCommentController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(INTERNAL_SERVER_ERROR.code);
+    expect(res.send).toHaveBeenCalledWith({
+      error: INTERNAL_SERVER_ERROR.message,
+      details: JSON.stringify(new Error('Test error')),
+    });
+  });
+});
+
+describe('deleteArticleCommentController', () => {
+  let req: Request<ArticlePathParams & CommentIdPathParam, ResponseObj<void>, void, void>;
+  let res: Response<ResponseObj<void>>;
+  let currentUser: PrismaUser;
+  let mockArticle: PrismaArticle & {
+    comments: {
+      id: number;
+      createdAt: Date;
+      updatedAt: Date;
+      body: string;
+      userId: number;
+      articleId: number;
+    }[]
+  };
+
+  beforeEach(() => {
+    currentUser = {
+      id: 1,
+      username: 'test',
+      email: 'test@test.com',
+      hashedPassword: 'hashedPassword',
+      bio: null,
+      image: '',
+      followedUsers: [],
+    };
+
+    mockArticle = {
+      id: 1,
+      slug: 'test-article',
+      title: 'Test Article',
+      description: 'This is a test article',
+      body: 'Lorem ipsum dolor sit amet',
+      tagList: ['test', 'article'],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      userId: 1,
+      favoritedUserIdList: [1, 2, 3],
+      comments: [
+        {
+          id: 1,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          body: 'This is a dummy comment',
+          userId: currentUser.id,
+          articleId: 1,
+        }
+      ],
+    };
+    
+    req = {
+      user: { email: currentUser.email },
+      params: {
+        slug: mockArticle.slug,
+        commentId: `${mockArticle.id}`,
+      },
+    } as unknown as Request<ArticlePathParams & CommentIdPathParam, ResponseObj<void>, void, void>;
+
+    res = {
+      status: vi.fn().mockReturnThis(),
+      send: vi.fn(),
+      sendStatus: vi.fn(),
+    } as unknown as Response<ResponseObj<void>>;
+
+    prisma.user.findUnique.mockResolvedValueOnce(currentUser);
+  });
+
+  test('should delete a comment of an article', async () => {
+    prisma.article.findFirst.mockResolvedValueOnce(mockArticle);
+    
+    await deleteArticleCommentController(req, res);
+
+    expect(prisma.user.findUnique).toHaveBeenCalledWith({
+      where: { email: req.user!.email },
+    });
+    expect(prisma.article.findFirst).toHaveBeenCalledWith({
+      where: {
+        slug: {
+          equals: req.params.slug,
+        },
+      },
+      include: { 
+        comments: true,
+        user: true,
+      },
+    });
+    expect(prisma.comment.delete).toHaveBeenCalledWith({
+      where: { id: +req.params.commentId },
+    });
+    expect(res.sendStatus).toHaveBeenCalledWith(204);
+  });
+
+  test('should return NOT_FOUND when article does not exist', async () => {
+    prisma.article.findFirst.mockResolvedValueOnce(null);
+
+    await deleteArticleCommentController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(NOT_FOUND.code);
+    expect(res.send).toHaveBeenCalledWith({
+      error: NOT_FOUND.message,
+      details: 'Such article does not exist.',
+    });
+  });
+
+  test('should return NOT_FOUND when comment does not exist', async () => {
+    const copiedMockArticle = structuredClone(mockArticle);
+    copiedMockArticle.comments[0].id = 2;
+
+    prisma.article.findFirst.mockResolvedValueOnce(copiedMockArticle);
+
+    await deleteArticleCommentController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(NOT_FOUND.code);
+    expect(res.send).toHaveBeenCalledWith({
+      error: NOT_FOUND.message,
+      details: 'Such comment does not exist.',
+    });
+  });
+
+  test('should return FORBIDDEN when user tries to delete other user\'s comment', async () => {
+    const copiedMockArticle = structuredClone(mockArticle);
+    copiedMockArticle.comments[0].userId = 2;
+    
+    prisma.article.findFirst.mockResolvedValueOnce(copiedMockArticle);
+
+    await deleteArticleCommentController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(FORBIDDEN.code);
+    expect(res.send).toHaveBeenCalledWith({
+      error: FORBIDDEN.message,
+      details: 'Cannot delete other user\'s comment.',
+    });
+  });
+
+  test('should handle INTERNAL_SERVER_ERROR', async () => {
+    prisma.article.findFirst.mockRejectedValueOnce(new Error('Test error'));
+
+    await deleteArticleCommentController(req, res);
 
     expect(res.status).toHaveBeenCalledWith(INTERNAL_SERVER_ERROR.code);
     expect(res.send).toHaveBeenCalledWith({

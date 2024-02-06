@@ -14,8 +14,11 @@ import getJwtUserDetailsMiddleware, { type RequestWithCurrentUserEmail } from '.
 import jwtPassportMiddleware from '../../middlewares/jwtPassportMiddleware';
 import { checkAuthMiddleware } from '../../middlewares/checkAuthMiddleware';
 import { 
+  createArticleCommentController,
   createArticleController, 
+  deleteArticleCommentController, 
   deleteArticleController, 
+  getArticleCommentsController, 
   getArticlesController, 
   getArticlesFeedController, 
   getSingleArticleController, 
@@ -143,39 +146,7 @@ articlesRouter.get<ArticlePathParams, MultipleCommentsResponse, void, void>(
   '/:slug/comments',
   checkSlugPresenceMiddleware,
   getJwtUserDetailsMiddleware,
-  async (
-    req: RequestWithCurrentUserEmail<ArticlePathParams, MultipleCommentsResponse, void, void>, 
-    res
-  ) => {
-    const { slug } = req.params;
-    const { currentUserEmail } = req;
-
-    try {
-      const currentUser = await getCurrentUser(currentUserEmail);
-      const articleWithComments = await getArticle({
-        slug,
-        includeComments: true,
-      });
-
-      if (!articleWithComments) {
-        return res.status(NOT_FOUND.code).send({
-          error: NOT_FOUND.message,
-          details: 'Such article does not exist.',
-        });
-      }
-
-      const parsedComments = parseRawComments(articleWithComments.comments, articleWithComments.user, currentUser);
-
-      return res.send({
-        comments: parsedComments,
-      });
-    } catch (error) {
-      return res.status(INTERNAL_SERVER_ERROR.code).send({
-        error: INTERNAL_SERVER_ERROR.message,
-        details: JSON.stringify(error),
-      });
-    }
-  }
+  getArticleCommentsController
 );
 
 articlesRouter.post<ArticlePathParams, SingleCommentResponse, AddCommentBody, void>(
@@ -183,40 +154,7 @@ articlesRouter.post<ArticlePathParams, SingleCommentResponse, AddCommentBody, vo
   jwtPassportMiddleware,
   checkAuthMiddleware,
   checkSlugPresenceMiddleware,
-  async (req, res) => {
-    const { slug } = req.params;
-    const { email: currentUserEmail } = req.user!;
-    const { comment: { body: commentBody } } = req.body;
-
-    try {
-      const currentUser = (await getCurrentUser(currentUserEmail))!;
-      const articleToComment = await getArticle({ slug });
-
-      if (!articleToComment) {
-        return res.status(NOT_FOUND.code).send({
-          error: NOT_FOUND.message,
-          details: 'Such article does not exist.',
-        });
-      }
-
-      const postedComment = await commentArticle({
-        body: commentBody,
-        articleId: articleToComment.id,
-        userId: currentUser.id,
-      });
-
-      const parsedComment = parseRawComments(postedComment, currentUser)[0];
-
-      return res.send({
-        comment: parsedComment,
-      });
-    } catch (error) {
-      return res.status(INTERNAL_SERVER_ERROR.code).send({
-        error: INTERNAL_SERVER_ERROR.message,
-        details: JSON.stringify(error),
-      });
-    }
-  }
+  createArticleCommentController
 );
 
 articlesRouter.delete<ArticlePathParams & CommentIdPathParam, ResponseObj<void>, void, void>(
@@ -225,53 +163,7 @@ articlesRouter.delete<ArticlePathParams & CommentIdPathParam, ResponseObj<void>,
   checkAuthMiddleware,
   checkSlugPresenceMiddleware,
   checkArticleCommentIdPresenceMiddleware,
-  async (req, res) => {
-    const { slug, commentId: rawCommentId } = req.params;
-    const { email: currentUserEmail } = req.user!;
-    const commentId = +rawCommentId;
-
-    try {
-      const currentUser = (await getCurrentUser(currentUserEmail))!;
-      const articleWithCommentToBeDeleted = await getArticle({ 
-        slug, 
-        includeComments: true, 
-      });
-
-      if (!articleWithCommentToBeDeleted) {
-        return res.status(NOT_FOUND.code).send({
-          error: NOT_FOUND.message,
-          details: 'Such article does not exist.',
-        });
-      }
-
-      const commentToBeDeleted = articleWithCommentToBeDeleted.comments.find(
-        comment => comment.id === commentId
-      );
-
-      if (!commentToBeDeleted) {
-        return res.status(NOT_FOUND.code).send({
-          error: NOT_FOUND.message,
-          details: 'Such comment does not exist.',
-        });
-      }
-      
-      if (commentToBeDeleted.userId !== currentUser.id) {
-        return res.status(FORBIDDEN.code).send({
-          error: FORBIDDEN.message,
-          details: 'Cannot delete other user\'s comment.',
-        });
-      }
-
-      await deleteComment(commentId);
-
-      return res.sendStatus(204);
-    } catch (error) {
-      return res.status(INTERNAL_SERVER_ERROR.code).send({
-        error: INTERNAL_SERVER_ERROR.message,
-        details: JSON.stringify(error),
-      });
-    }
-  }
+  deleteArticleCommentController
 );
 
 articlesRouter.post<ArticlePathParams, SingleArticleResponse, void>(

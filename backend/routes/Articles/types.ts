@@ -74,6 +74,10 @@ interface AddCommentBody {
   }
 }
 
+interface CommentIdPathParam {
+  commentId: string;
+}
+
 export type {
   ArticleObj,
   MultipleArticlesResponse,
@@ -89,4 +93,5 @@ export type {
   GetArticleParams,
   SingleCommentResponse,
   AddCommentBody,
+  CommentIdPathParam,
 }
