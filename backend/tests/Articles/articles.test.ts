@@ -6,10 +6,12 @@ import {
   createArticleController,
   deleteArticleCommentController,
   deleteArticleController,
+  favoriteArticleController,
   getArticleCommentsController,
   getArticlesController,
   getArticlesFeedController,
   getSingleArticleController,
+  unfavoriteArticleController,
   updateArticleController, 
 } from '../../controllers/articles';
 import * as articleUtils from '../../controllers/articles/utils';
@@ -1122,6 +1124,286 @@ describe('deleteArticleCommentController', () => {
     prisma.article.findFirst.mockRejectedValueOnce(new Error('Test error'));
 
     await deleteArticleCommentController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(INTERNAL_SERVER_ERROR.code);
+    expect(res.send).toHaveBeenCalledWith({
+      error: INTERNAL_SERVER_ERROR.message,
+      details: JSON.stringify(new Error('Test error')),
+    });
+  });
+});
+
+describe('favoriteArticleController', () => {
+  let req: Request<ArticlePathParams, SingleArticleResponse, void>;
+  let res: Response<SingleArticleResponse>;
+  let currentUser: PrismaUser;
+  let mockArticle: PrismaArticle;
+  let updatedArticle: PrismaArticle;
+  let updatedAtDateObject: Date;
+  let updatedFavoritedUserIdList: number[];
+
+  beforeEach(() => {
+    currentUser = {
+      id: 1,
+      username: 'test',
+      email: 'test@test.com',
+      hashedPassword: 'hashedPassword',
+      bio: null,
+      image: '',
+      followedUsers: [],
+    };
+
+    mockArticle = {
+      id: 1,
+      slug: 'test-article',
+      title: 'Test Article',
+      description: 'This is a test article',
+      body: 'Lorem ipsum dolor sit amet',
+      tagList: ['test', 'article'],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      userId: 1,
+      favoritedUserIdList: [2, 3],
+    };
+    
+    req = {
+      user: { email: currentUser.email },
+      params: { slug: mockArticle.slug },
+    } as unknown as Request<ArticlePathParams, SingleArticleResponse, void>;
+
+    res = {
+      status: vi.fn().mockReturnThis(),
+      send: vi.fn(),
+    } as unknown as Response<SingleArticleResponse>;
+
+    updatedFavoritedUserIdList = mockArticle.favoritedUserIdList.concat(currentUser.id);
+    updatedArticle = {
+      ...mockArticle,
+      favoritedUserIdList: updatedFavoritedUserIdList,
+    };
+
+    vi.spyOn(articleUtils, 'parseRawArticles').mockReturnValueOnce([
+      updatedArticle as unknown as ArticleObj
+    ]);
+
+    updatedAtDateObject = new Date();
+
+    vi.useFakeTimers();
+    vi.setSystemTime(updatedAtDateObject);
+
+    prisma.user.findUnique.mockResolvedValueOnce(currentUser);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  })
+
+  test('should favorite an article', async () => {
+    prisma.article.findFirst.mockResolvedValueOnce(mockArticle);
+    prisma.article.update.mockResolvedValueOnce(mockArticle);
+    
+    await favoriteArticleController(req, res);
+
+    expect(prisma.user.findUnique).toHaveBeenCalledWith({
+      where: { email: req.user!.email },
+    });
+    expect(prisma.article.findFirst).toHaveBeenCalledWith({
+      include: {
+        user: true,
+        comments: undefined,
+      },
+      where: { slug: { equals: req.params.slug } },
+    });
+    expect(prisma.article.update).toHaveBeenCalledWith({
+      where: { id: mockArticle.id },
+      data: {
+        favoritedUserIdList: updatedFavoritedUserIdList,
+        updatedAt: updatedAtDateObject,
+      },
+      include: { user: true },
+    });
+    expect(res.send).toHaveBeenCalledWith({
+      article: updatedArticle,
+    });
+  });
+
+  test('should not update an article if it is already liked', async () => {
+    prisma.article.findFirst.mockResolvedValueOnce(updatedArticle);
+    
+    await favoriteArticleController(req, res);
+
+    expect(prisma.user.findUnique).toHaveBeenCalledWith({
+      where: { email: req.user!.email },
+    });
+    expect(prisma.article.findFirst).toHaveBeenCalledWith({
+      include: {
+        user: true,
+        comments: undefined,
+      },
+      where: { slug: { equals: req.params.slug } },
+    });
+    expect(res.send).toHaveBeenCalledWith({
+      article: updatedArticle,
+    });
+    expect(prisma.article.update).not.toHaveBeenCalled();
+  });
+
+  test('should return NOT_FOUND when article does not exist', async () => {
+    prisma.article.findFirst.mockResolvedValueOnce(null);
+
+    await favoriteArticleController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(NOT_FOUND.code);
+    expect(res.send).toHaveBeenCalledWith({
+      error: NOT_FOUND.message,
+      details: 'This article does not exist.',
+    });
+  });
+
+  test('should handle INTERNAL_SERVER_ERROR', async () => {
+    prisma.article.findFirst.mockRejectedValueOnce(new Error('Test error'));
+
+    await favoriteArticleController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(INTERNAL_SERVER_ERROR.code);
+    expect(res.send).toHaveBeenCalledWith({
+      error: INTERNAL_SERVER_ERROR.message,
+      details: JSON.stringify(new Error('Test error')),
+    });
+  });
+});
+
+describe('unfavoriteArticleController', () => {
+  let req: Request<ArticlePathParams, SingleArticleResponse, void>;
+  let res: Response<SingleArticleResponse>;
+  let currentUser: PrismaUser;
+  let mockArticle: PrismaArticle;
+  let updatedArticle: PrismaArticle;
+  let updatedAtDateObject: Date;
+  let updatedFavoritedUserIdList: number[];
+
+  beforeEach(() => {
+    currentUser = {
+      id: 1,
+      username: 'test',
+      email: 'test@test.com',
+      hashedPassword: 'hashedPassword',
+      bio: null,
+      image: '',
+      followedUsers: [],
+    };
+
+    mockArticle = {
+      id: 1,
+      slug: 'test-article',
+      title: 'Test Article',
+      description: 'This is a test article',
+      body: 'Lorem ipsum dolor sit amet',
+      tagList: ['test', 'article'],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      userId: 1,
+      favoritedUserIdList: [1, 2, 3],
+    };
+    
+    req = {
+      user: { email: currentUser.email },
+      params: { slug: mockArticle.slug },
+    } as unknown as Request<ArticlePathParams, SingleArticleResponse, void>;
+
+    res = {
+      status: vi.fn().mockReturnThis(),
+      send: vi.fn(),
+    } as unknown as Response<SingleArticleResponse>;
+
+    updatedFavoritedUserIdList = mockArticle.favoritedUserIdList.filter(id => id !== currentUser.id);
+    updatedArticle = {
+      ...mockArticle,
+      favoritedUserIdList: updatedFavoritedUserIdList,
+    };
+
+    vi.spyOn(articleUtils, 'parseRawArticles').mockReturnValueOnce([
+      updatedArticle as unknown as ArticleObj
+    ]);
+
+    updatedAtDateObject = new Date();
+
+    vi.useFakeTimers();
+    vi.setSystemTime(updatedAtDateObject);
+
+    prisma.user.findUnique.mockResolvedValueOnce(currentUser);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  })
+
+  test('should unfavorite an article', async () => {
+    prisma.article.findFirst.mockResolvedValueOnce(mockArticle);
+    prisma.article.update.mockResolvedValueOnce(mockArticle);
+    
+    await unfavoriteArticleController(req, res);
+
+    expect(prisma.user.findUnique).toHaveBeenCalledWith({
+      where: { email: req.user!.email },
+    });
+    expect(prisma.article.findFirst).toHaveBeenCalledWith({
+      include: {
+        user: true,
+        comments: undefined,
+      },
+      where: { slug: { equals: req.params.slug } },
+    });
+    expect(prisma.article.update).toHaveBeenCalledWith({
+      where: { id: mockArticle.id },
+      data: {
+        favoritedUserIdList: updatedFavoritedUserIdList,
+        updatedAt: updatedAtDateObject,
+      },
+      include: { user: true },
+    });
+    expect(res.send).toHaveBeenCalledWith({
+      article: updatedArticle,
+    });
+  });
+
+  test('should not update an article if it is not liked', async () => {
+    prisma.article.findFirst.mockResolvedValueOnce(updatedArticle);
+    
+    await unfavoriteArticleController(req, res);
+
+    expect(prisma.user.findUnique).toHaveBeenCalledWith({
+      where: { email: req.user!.email },
+    });
+    expect(prisma.article.findFirst).toHaveBeenCalledWith({
+      include: {
+        user: true,
+        comments: undefined,
+      },
+      where: { slug: { equals: req.params.slug } },
+    });
+    expect(res.send).toHaveBeenCalledWith({
+      article: updatedArticle,
+    });
+    expect(prisma.article.update).not.toHaveBeenCalled();
+  });
+
+  test('should return NOT_FOUND when article does not exist', async () => {
+    prisma.article.findFirst.mockResolvedValueOnce(null);
+
+    await unfavoriteArticleController(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(NOT_FOUND.code);
+    expect(res.send).toHaveBeenCalledWith({
+      error: NOT_FOUND.message,
+      details: 'This article does not exist.',
+    });
+  });
+
+  test('should handle INTERNAL_SERVER_ERROR', async () => {
+    prisma.article.findFirst.mockRejectedValueOnce(new Error('Test error'));
+
+    await unfavoriteArticleController(req, res);
 
     expect(res.status).toHaveBeenCalledWith(INTERNAL_SERVER_ERROR.code);
     expect(res.send).toHaveBeenCalledWith({

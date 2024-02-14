@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 
-import { commentArticle, createArticle, deleteArticle, deleteComment, getArticle, getArticles, getArticlesFeed, updateArticle } from '../../dao/articlesDao';
+import { commentArticle, createArticle, deleteArticle, deleteComment, favoriteArticle, getArticle, getArticles, getArticlesFeed, unfavoriteArticle, updateArticle } from '../../dao/articlesDao';
 import { getCurrentUser, parseRawArticles, parseRawComments } from './utils';
 
 import statusCodes from '../../constants/status-codes';
@@ -366,6 +366,90 @@ export async function deleteArticleCommentController(
     await deleteComment(commentId);
 
     return res.sendStatus(204);
+  } catch (error) {
+    return res.status(INTERNAL_SERVER_ERROR.code).send({
+      error: INTERNAL_SERVER_ERROR.message,
+      details: JSON.stringify(error),
+    });
+  }
+}
+
+export async function favoriteArticleController(
+  req: Request<ArticlePathParams, SingleArticleResponse, void>,
+  res: Response<SingleArticleResponse>
+) {
+  try {
+    const { slug } = req.params;
+    const { email } = req.user!;
+
+    const currentUser = await getCurrentUser(email);
+    const { id: currentUserId } = currentUser!;
+    const articleWithSlugParam = await getArticle({ slug });
+
+    if (!articleWithSlugParam) {
+      return res.status(NOT_FOUND.code).send({
+        error: NOT_FOUND.message,
+        details: 'This article does not exist.',
+      });
+    }
+
+    if (articleWithSlugParam.favoritedUserIdList.includes(currentUserId)) {
+      const processedArticle = parseRawArticles([articleWithSlugParam], currentUser)[0];
+      
+      return res.send({ article: processedArticle });
+    }
+
+    const likedArticle = await favoriteArticle({
+      articleId: articleWithSlugParam.id,
+      oldFavoritedUsersList: articleWithSlugParam.favoritedUserIdList,
+      userId: currentUserId,
+    });
+
+    const processedArticle = parseRawArticles([likedArticle], currentUser)[0];
+    
+    return res.send({ article: processedArticle });
+  } catch (error) {
+    return res.status(INTERNAL_SERVER_ERROR.code).send({
+      error: INTERNAL_SERVER_ERROR.message,
+      details: JSON.stringify(error),
+    });
+  }
+}
+
+export async function unfavoriteArticleController(
+  req: Request<ArticlePathParams, SingleArticleResponse, void>,
+  res: Response<SingleArticleResponse>
+) {
+  try {
+    const { slug } = req.params;
+    const { email } = req.user!;
+
+    const currentUser = await getCurrentUser(email);
+    const { id: currentUserId } = currentUser!;
+    const articleWithSlugParam = await getArticle({ slug });
+
+    if (!articleWithSlugParam) {
+      return res.status(NOT_FOUND.code).send({
+        error: NOT_FOUND.message,
+        details: 'This article does not exist.',
+      });
+    }
+
+    if (!articleWithSlugParam.favoritedUserIdList.includes(currentUserId)) {
+      const processedArticle = parseRawArticles([articleWithSlugParam], currentUser)[0];
+      
+      return res.send({ article: processedArticle });
+    }
+
+    const dislikedArticle = await unfavoriteArticle({
+      articleId: articleWithSlugParam.id,
+      oldFavoritedUsersList: articleWithSlugParam.favoritedUserIdList,
+      userId: currentUserId,
+    });
+
+    const processedArticle = parseRawArticles([dislikedArticle], currentUser)[0];
+    
+    return res.send({ article: processedArticle });
   } catch (error) {
     return res.status(INTERNAL_SERVER_ERROR.code).send({
       error: INTERNAL_SERVER_ERROR.message,

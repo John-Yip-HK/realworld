@@ -18,10 +18,12 @@ import {
   createArticleController, 
   deleteArticleCommentController, 
   deleteArticleController, 
+  favoriteArticleController, 
   getArticleCommentsController, 
   getArticlesController, 
   getArticlesFeedController, 
   getSingleArticleController, 
+  unfavoriteArticleController, 
   updateArticleController
 } from '../../controllers/articles/articlesController';
 import * as articlesUtils from '../../controllers/articles/utils';
@@ -171,44 +173,7 @@ articlesRouter.post<ArticlePathParams, SingleArticleResponse, void>(
   jwtPassportMiddleware,
   checkAuthMiddleware,
   checkSlugPresenceMiddleware,
-  async (req, res) => {
-    try {
-      const { slug } = req.params;
-      const { email } = req.user!;
-
-      const currentUser = (await getCurrentUser(email))!;
-      const { id: currentUserId } = currentUser;
-      const articleWithSlugParam = await getArticle({ slug });
-
-      if (!articleWithSlugParam) {
-        return res.status(NOT_FOUND.code).send({
-          error: NOT_FOUND.message,
-          details: 'This article does not exist.',
-        });
-      }
-
-      if (articleWithSlugParam.favoritedUserIdList.includes(currentUserId)) {
-        const processedArticle = parseRawArticles([articleWithSlugParam], currentUser)[0];
-        
-        return res.send({ article: processedArticle });
-      }
-
-      const likedArticle = await favoriteArticle({
-        articleId: articleWithSlugParam.id,
-        oldFavoritedUsersList: articleWithSlugParam.favoritedUserIdList,
-        userId: currentUserId,
-      });
-
-      const processedArticle = parseRawArticles([likedArticle], currentUser)[0];
-      
-      return res.send({ article: processedArticle });
-    } catch (error) {
-      return res.status(INTERNAL_SERVER_ERROR.code).send({
-        error: INTERNAL_SERVER_ERROR.message,
-        details: JSON.stringify(error),
-      });
-    }
-  }  
+  favoriteArticleController
 );
 
 articlesRouter.delete<ArticlePathParams, SingleArticleResponse, void>(
@@ -216,44 +181,7 @@ articlesRouter.delete<ArticlePathParams, SingleArticleResponse, void>(
   jwtPassportMiddleware,
   checkAuthMiddleware,
   checkSlugPresenceMiddleware,
-  async (req, res) => {
-    try {
-      const { slug } = req.params;
-      const { email } = req.user!;
-
-      const currentUser = (await getCurrentUser(email))!;
-      const { id: currentUserId } = currentUser;
-      const articleWithSlugParam = await getArticle({ slug });
-
-      if (!articleWithSlugParam) {
-        return res.status(NOT_FOUND.code).send({
-          error: NOT_FOUND.message,
-          details: 'This article does not exist.',
-        });
-      }
-
-      if (!articleWithSlugParam.favoritedUserIdList.includes(currentUserId)) {
-        const processedArticle = parseRawArticles([articleWithSlugParam], currentUser)[0];
-        
-        return res.send({ article: processedArticle });
-      }
-
-      const dislikedArticle = await unfavoriteArticle({
-        articleId: articleWithSlugParam.id,
-        oldFavoritedUsersList: articleWithSlugParam.favoritedUserIdList,
-        userId: currentUserId,
-      });
-
-      const processedArticle = parseRawArticles([dislikedArticle], currentUser)[0];
-      
-      return res.send({ article: processedArticle });
-    } catch (error) {
-      return res.status(INTERNAL_SERVER_ERROR.code).send({
-        error: INTERNAL_SERVER_ERROR.message,
-        details: JSON.stringify(error),
-      });
-    }
-  }  
+  unfavoriteArticleController,
 );
 
 export { articlesRouter };
