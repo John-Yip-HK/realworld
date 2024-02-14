@@ -5,5 +5,18 @@ export default defineConfig({
     globals: true,
     setupFiles: './tests/setup.ts',
     restoreMocks: true,
+    coverage: {
+      reporter: ['text', 'html'],
+      enabled: true,
+      reportsDirectory: './tests/unit/coverage',
+      exclude: [
+        '.eslintrc.cjs',
+        'app.ts',
+        '**/*.d.ts',
+        'routes',
+        'strategies',
+        'prisma',
+      ]
+    },
   },
 })
