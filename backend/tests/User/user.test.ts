@@ -147,7 +147,7 @@ describe('updateCurrentUserController', () => {
     });
   });
 
-  it.only('should return UNPROCESSABLE_ENTITY if password in request body is the same as password of the current user', async () => {
+  it('should return UNPROCESSABLE_ENTITY if password in request body is the same as password of the current user', async () => {
     prisma.user.findUnique
       .mockResolvedValueOnce(null)
       .mockResolvedValueOnce(null)
