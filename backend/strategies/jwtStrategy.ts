@@ -2,6 +2,7 @@ import passport from 'passport';
 import { 
   Strategy as JwtStrategy, 
   ExtractJwt,
+  type VerifiedCallback,
 } from 'passport-jwt';
 
 import { handleUserResponse } from '../utils/handleUserResponseUtils';
@@ -10,8 +11,27 @@ import { getUserByEmail } from '../dao/usersDao';
 
 import { JWT_SECRET } from '../constants/app';
 
-
 const { fromAuthHeaderAsBearerToken, fromExtractors, fromHeader } = ExtractJwt;
+
+export const jwtVerifier = async (jwtPayload: any, done: VerifiedCallback) => {
+  const dummyUser: any = {};
+
+  try {
+    const user = await getUserByEmail(jwtPayload.email!);
+
+    if (!user) {
+      return done(null, dummyUser, {
+        errors: {
+          'user': ['does not exist.'],
+        }
+      });
+    }
+
+    done(null, handleUserResponse(user, '', true).user);
+  } catch (error) {
+    done(null, dummyUser, error);
+  }
+}
 
 passport.use(new JwtStrategy(
   {
@@ -19,28 +39,12 @@ passport.use(new JwtStrategy(
     jwtFromRequest: fromExtractors([
       fromAuthHeaderAsBearerToken(), 
       (req) => {
-        const token = extractJwtFromHeader(fromHeader('authorization')(req));
+        const authHeader = fromHeader('authorization')(req);
+        const token = extractJwtFromHeader(authHeader);
+        
         return token ?? null;
       }
     ]),
   }, 
-  async (jwtPayload, done) => {
-    const dummyUser: any = {};
-
-    try {
-      const user = await getUserByEmail(jwtPayload.email!);
-
-      if (!user) {
-        return done(null, dummyUser, {
-          errors: {
-            'user': ['does not exist.'],
-          }
-        });
-      }
-
-      done(null, handleUserResponse(user, '', true).user);
-    } catch (error) {
-      done(null, dummyUser, error);
-    }
-  }
+  jwtVerifier
 ));
