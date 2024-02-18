@@ -1,4 +1,4 @@
-export const UNAUTHORISED_ERROR = {
+export const UNAUTHORIZED_ERROR = {
   status: 'error',
   message: 'missing authorization credentials'
 } as const;

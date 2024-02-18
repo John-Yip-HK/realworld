@@ -12,9 +12,12 @@ export interface RequestWithCurrentUserEmail<
 }
 
 const getJwtUserDetailsMiddleware = (req: RequestWithCurrentUserEmail, _: Response, next: NextFunction) => {
-  const decodedJwt = verifyJwt(extractJwtFromHeader(req.headers.authorization)) as Partial<SignJwtPayload> | undefined;
+  const jwt = extractJwtFromHeader(req.headers.authorization);
+  const decodedJwt = verifyJwt(jwt) as Partial<SignJwtPayload> | undefined;
 
-  req.currentUserEmail = decodedJwt?.email;
+  if (decodedJwt?.email) {
+    req.currentUserEmail = decodedJwt.email;
+  }
 
   next();
 };

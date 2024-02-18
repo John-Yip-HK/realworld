@@ -1,7 +1,7 @@
 import { type RequestHandler } from 'express-serve-static-core';
 
 import statusCodes from '../constants/status-codes';
-import { UNAUTHORISED_ERROR } from '../constants/user';
+import { UNAUTHORIZED_ERROR } from '../constants/user';
 import { extractJwtFromHeader } from '../utils/jwtUtils';
 
 const { UNAUTHORIZED, FORBIDDEN, INTERNAL_SERVER_ERROR } = statusCodes;
@@ -13,7 +13,7 @@ export const checkAuthMiddleware: RequestHandler<any, any, any, any> = (req, res
   if (!token) {
     return res
       .status(UNAUTHORIZED.code)
-      .send(UNAUTHORISED_ERROR);
+      .send(UNAUTHORIZED_ERROR);
   }
 
   if (Object.keys(authInfo ?? {}).length > 0) {
