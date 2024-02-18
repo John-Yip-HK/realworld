@@ -16,6 +16,7 @@ export default defineConfig({
         'routes',
         'strategies',
         'prisma',
+        'middlewares/jwtPassportMiddleware.ts',
       ]
     },
   },
